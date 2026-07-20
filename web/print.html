@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Plan semanal · Master Endurance</title>
+  <link rel="stylesheet" href="/static/print.css">
+</head>
+<body>
+  <div class="print-toolbar no-print">
+    <button onclick="history.back()">← Volver</button>
+    <span>Vista previa A4</span>
+    <button class="primary" onclick="window.print()">Imprimir / Guardar PDF</button>
+  </div>
+  <main class="sheet" id="sheet">
+    <header class="document-head">
+      <div class="document-brand">ANDRÉS TRAINER · MASTER ENDURANCE</div>
+      <h1 id="documentTitle">PLAN SEMANAL</h1>
+      <h2 id="athleteName">ATLETA</h2>
+      <div class="meta-grid">
+        <div><span>MES</span><strong id="monthLabel">—</strong></div>
+        <div><span>SEMANA</span><strong id="weekNumber">—</strong></div>
+        <div><span>DEL</span><strong id="startDate">—</strong></div>
+        <div><span>AL</span><strong id="endDate">—</strong></div>
+        <div><span>CATEGORÍA</span><strong id="category">—</strong></div>
+        <div><span>HRS./SEM.</span><strong id="hours">—</strong></div>
+      </div>
+      <div class="objective"><span>OBJETIVO</span><strong id="goal">—</strong><span id="weeklyKm"></span></div>
+    </header>
+    <section class="training-days" id="trainingDays"><p>Cargando plan…</p></section>
+    <footer class="document-footer"><span id="planNotes"></span><span>Generado por Master Endurance</span></footer>
+  </main>
+  <script src="/static/print.js"></script>
+</body>
+</html>

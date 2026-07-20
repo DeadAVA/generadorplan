@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#071426">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Andrés Trainer">
+  <title>Andrés Trainer · Master Endurance</title>
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">AT</span><div><strong>Andrés Trainer</strong><small>Master Endurance</small></div></div>
+      <nav aria-label="Navegación principal">
+        <button class="nav-item active" data-view="dashboard"><span>⌂</span>Resumen</button>
+        <button class="nav-item" data-view="athletes"><span>◎</span>Atletas</button>
+        <button class="nav-item" data-view="plans"><span>▦</span>Planes</button>
+      </nav>
+      <div class="sidebar-footer"><span class="status-dot"></span><span id="systemStatus">Conectando…</span></div>
+    </aside>
+
+    <main class="main">
+      <header class="topbar">
+        <div><p class="kicker">Panel del entrenador</p><h1 id="viewTitle">Resumen</h1></div>
+        <div class="top-actions">
+          <a class="btn secondary" href="/api/backups/json">Descargar base</a>
+          <button class="btn secondary" id="restoreBtn">Restaurar</button>
+          <input type="file" id="restoreFile" accept="application/json,.json" hidden>
+          <button class="btn primary" id="quickPlanBtn">＋ Nuevo plan</button>
+        </div>
+      </header>
+
+      <section class="view active" id="dashboardView">
+        <div class="metrics">
+          <article class="metric"><span>Atletas activos</span><strong id="metricAthletes">0</strong><small>Base de trabajo</small></article>
+          <article class="metric"><span>Planes creados</span><strong id="metricPlans">0</strong><small>Historial completo</small></article>
+          <article class="metric accent"><span>Km planificados</span><strong id="metricKm">0</strong><small>En planes registrados</small></article>
+          <article class="metric"><span>Planes publicados</span><strong id="metricPublished">0</strong><small>Listos para entregar</small></article>
+        </div>
+        <div class="dashboard-grid">
+          <article class="card">
+            <div class="card-head"><div><p class="kicker">Actividad</p><h2>Planes recientes</h2></div><button class="text-btn" data-go="plans">Ver todos →</button></div>
+            <div id="recentPlans" class="compact-list"></div>
+          </article>
+          <article class="card coach-card">
+            <p class="kicker">Atajo inteligente</p><h2>Construye una semana en segundos</h2>
+            <p>Selecciona atleta, objetivo, nivel, días y carga. El asistente distribuye pista, fuerza, recuperación y fondo.</p>
+            <button class="btn light" id="dashboardGenerateBtn">Generar plan automático</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="view" id="athletesView">
+        <div class="section-toolbar">
+          <label class="search"><span>⌕</span><input id="athleteSearch" type="search" placeholder="Buscar atleta…"></label>
+          <button class="btn primary" id="newAthleteBtn">＋ Registrar atleta</button>
+        </div>
+        <div class="athlete-grid" id="athleteGrid"></div>
+      </section>
+
+      <section class="view" id="plansView">
+        <article class="automation-banner">
+          <div><p class="kicker">Planificación asistida</p><h2>Generador especializado</h2><p>Crea una estructura completa para fondo, ruta o 400–800 m y ajústala después.</p></div>
+          <button class="btn light" id="generateBtn">Generar automáticamente</button>
+        </article>
+        <div class="section-toolbar">
+          <select id="planAthleteFilter" aria-label="Filtrar por atleta"><option value="">Todos los atletas</option></select>
+          <select id="planStatusFilter" aria-label="Filtrar por estado"><option value="">Todos los estados</option><option value="draft">Borrador</option><option value="published">Publicado</option><option value="archived">Archivado</option></select>
+          <button class="btn primary" id="newPlanBtn">＋ Plan manual</button>
+        </div>
+        <div class="plan-list" id="planList"></div>
+      </section>
+    </main>
+  </div>
+
+  <dialog id="athleteDialog" class="modal">
+    <form id="athleteForm">
+      <header class="modal-head"><div><p class="kicker">Expediente</p><h2 id="athleteModalTitle">Nuevo atleta</h2></div><button type="button" class="icon-btn" data-close="athleteDialog">×</button></header>
+      <div class="modal-body">
+        <div class="form-grid two">
+          <label>Nombre completo<input id="athleteName" required maxlength="80"></label>
+          <label>Categoría<input id="athleteCategory" value="LIBRE" maxlength="50"></label>
+          <label>Fecha de nacimiento<input id="athleteBirth" type="date"></label>
+          <label>Género<input id="athleteGender" maxlength="30"></label>
+          <label class="span-2">Contacto<input id="athleteContact" maxlength="120" placeholder="Teléfono o correo"></label>
+          <label class="span-2">Notas<textarea id="athleteNotes" rows="2" maxlength="2000"></textarea></label>
+        </div>
+        <div class="subhead"><h3>Zonas de ritmo</h3><span>min/km</span></div>
+        <div id="paceZoneFields" class="zone-list"></div>
+      </div>
+      <footer class="modal-actions"><button type="button" class="btn secondary" data-close="athleteDialog">Cancelar</button><button class="btn primary">Guardar atleta</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="generatorDialog" class="modal small">
+    <form id="generatorForm">
+      <header class="modal-head"><div><p class="kicker">Asistente</p><h2>Generar plan semanal</h2></div><button type="button" class="icon-btn" data-close="generatorDialog">×</button></header>
+      <div class="modal-body form-grid two">
+        <label class="span-2">Atleta<select id="generatorAthlete" required></select></label>
+        <label>Inicio de semana<input id="generatorStart" type="date" required></label>
+        <label>Objetivo<select id="generatorGoal"><option value="400-800">400–800 metros</option><option value="base">Base aeróbica</option><option value="5k">5 km</option><option value="10k" selected>10 km</option><option value="21k">Medio maratón</option><option value="42k">Maratón</option></select></label>
+        <label>Nivel<select id="generatorLevel"><option value="initial">Inicial</option><option value="intermediate" selected>Intermedio</option><option value="advanced">Avanzado</option></select></label>
+        <label>Días de entrenamiento<input id="generatorDays" type="number" min="3" max="7" value="6" required></label>
+        <label>Volumen semanal (km)<input id="generatorKm" type="number" min="10" max="300" value="45" required></label>
+        <label>Horas semanales<input id="generatorHours" type="number" min="0" max="168" step="0.5" value="6"></label>
+        <label>Categoría<input id="generatorCategory" value="LIBRE" maxlength="50"></label>
+      </div>
+      <footer class="modal-actions"><button type="button" class="btn secondary" data-close="generatorDialog">Cancelar</button><button class="btn primary">Generar y editar</button></footer>
+    </form>
+  </dialog>
+
+  <dialog id="planDialog" class="modal wide">
+    <form id="planForm">
+      <header class="modal-head"><div><p class="kicker">Semana de entrenamiento</p><h2 id="planModalTitle">Nuevo plan</h2></div><button type="button" class="icon-btn" data-close="planDialog">×</button></header>
+      <div class="modal-body">
+        <div class="form-grid four">
+          <label class="span-2">Atleta<select id="planAthlete" required></select></label>
+          <label class="span-2">Título<input id="planTitle" value="Plan semanal" required maxlength="140"></label>
+          <label>Inicio<input id="planStart" type="date" required></label>
+          <label>Fin<input id="planEnd" type="date" required></label>
+          <label>Semana<input id="planWeek" type="number" min="1" max="53" value="1"></label>
+          <label>Mes<input id="planMonth" maxlength="40"></label>
+          <label>Categoría<input id="planCategory" value="LIBRE"></label>
+          <label>Hrs./sem.<input id="planHours" type="number" min="0" max="168" step="0.5"></label>
+          <label>Km/sem.<input id="planKm" type="number" min="0" max="1000" step="0.5"></label>
+          <label>Estado<select id="planStatus"><option value="draft">Borrador</option><option value="published">Publicado</option><option value="archived">Archivado</option></select></label>
+          <label class="span-2">Objetivo<input id="planGoal" maxlength="100"></label>
+          <label class="span-2">Notas generales<input id="planNotes" maxlength="4000"></label>
+        </div>
+        <div class="subhead"><div><h3>Contenido semanal</h3><p>Una línea por ejercicio: Nombre | Prescripción | Intensidad | Pausa | Nota</p></div><button type="button" class="btn secondary compact" id="syncDatesBtn">Ajustar fechas</button></div>
+        <div id="planDaysEditor" class="days-editor"></div>
+      </div>
+      <footer class="modal-actions"><button type="button" class="btn secondary" data-close="planDialog">Cancelar</button><button class="btn primary">Guardar plan completo</button></footer>
+    </form>
+  </dialog>
+
+  <div class="toast" id="toast" role="status"></div>
+  <script src="/static/app.js" defer></script>
+</body>
+</html>

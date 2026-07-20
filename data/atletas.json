@@ -1,0 +1,605 @@
+{
+  "version": 12,
+  "activeAthleteId": "cynthia-medina",
+  "athletes": [
+    {
+      "id": "cynthia-medina",
+      "name": "CYNTHIA MEDINA",
+      "paces": {
+        "Z5": [
+          "04:30",
+          "04:40"
+        ],
+        "Z4": [
+          "04:55",
+          "05:00"
+        ],
+        "Z3": [
+          "05:10",
+          "05:30"
+        ],
+        "Z2": [
+          "05:40",
+          "06:00"
+        ],
+        "Z1": [
+          "06:00",
+          "06:30"
+        ]
+      },
+      "week": [
+        {
+          "id": "dd191a58-308e-46f8-a650-bae818428845",
+          "day": "Lunes",
+          "category": "corta",
+          "name": "Rodaje aeróbico",
+          "zone": "Z2",
+          "measure": "km",
+          "value": 8,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Trote cómodo, técnica de carrera y movilidad."
+        },
+        {
+          "id": "7ba006b4-96bf-41a7-9e30-4082f325bfca",
+          "day": "Martes",
+          "category": "intervalos",
+          "name": "Intervalos específicos 10 km",
+          "zone": "Z5",
+          "measure": "km",
+          "value": 10,
+          "reps": 6,
+          "distance": 800,
+          "pause": "Recuperación al trote",
+          "description": "Calentamiento completo, trabajo fraccionado y vuelta a la calma."
+        },
+        {
+          "id": "de338056-0b97-4705-b199-6dd41b4e185d",
+          "day": "Miércoles",
+          "category": "descanso",
+          "name": "Descanso / movilidad",
+          "zone": "-",
+          "measure": "km",
+          "value": 0,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Descanso. Opcional: movilidad suave y recuperación."
+        },
+        {
+          "id": "947a9564-33f9-4d4e-9cb7-5fc1f70f0ec4",
+          "day": "Jueves",
+          "category": "fartlek",
+          "name": "Umbral controlado",
+          "zone": "Z4",
+          "measure": "km",
+          "value": 8,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Bloque de ritmo sostenido sin llegar al esfuerzo máximo."
+        },
+        {
+          "id": "5753ffad-619a-4094-8432-d093d3ae61ec",
+          "day": "Viernes",
+          "category": "descanso",
+          "name": "Descanso / movilidad",
+          "zone": "-",
+          "measure": "km",
+          "value": 0,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Descanso. Opcional: movilidad suave y recuperación."
+        },
+        {
+          "id": "c17a9db7-8645-4213-952e-6bce52308e42",
+          "day": "Sábado",
+          "category": "media",
+          "name": "Distancia media",
+          "zone": "Z2",
+          "measure": "km",
+          "value": 12,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Rodaje estable y progresivo, cuidando la técnica."
+        },
+        {
+          "id": "351c4b72-fa8d-4b33-8c94-cfcc2750ba00",
+          "day": "Domingo",
+          "category": "larga",
+          "name": "Fondo para 10 km",
+          "zone": "Z2",
+          "measure": "km",
+          "value": 14,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Fondo continuo controlado. Practicar hidratación y nutrición cuando corresponda."
+        }
+      ]
+    },
+    {
+      "id": "lupita-monrroy",
+      "name": "LUPITA MONRROY",
+      "paces": {
+        "Z5": [
+          "04:55",
+          "05:10"
+        ],
+        "Z4": [
+          "05:20",
+          "05:35"
+        ],
+        "Z3": [
+          "05:45",
+          "06:05"
+        ],
+        "Z2": [
+          "06:15",
+          "06:40"
+        ],
+        "Z1": [
+          "06:50",
+          "07:20"
+        ]
+      },
+      "week": [
+        {
+          "id": "72aea0d6-e93d-4873-9398-5edf54bf609d",
+          "day": "Lunes",
+          "category": "media",
+          "name": "Distancia media",
+          "zone": "Z2",
+          "measure": "km",
+          "value": 12,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Calentamiento. Trote continuo estable. Flexo-elasticidad."
+        },
+        {
+          "id": "66003f56-4a90-43d9-a3ec-62931dc14b65",
+          "day": "Martes",
+          "category": "intervalos",
+          "name": "Intervalos",
+          "zone": "Z5",
+          "measure": "km",
+          "value": 10,
+          "reps": 10,
+          "distance": 600,
+          "pause": "200 m trote rec.",
+          "description": "Calentamiento. Trabajo fraccionado en pista."
+        },
+        {
+          "id": "fbb5def6-960c-496f-9e03-570aefa40545",
+          "day": "Miércoles",
+          "category": "corta",
+          "name": "Distancia corta",
+          "zone": "Z2",
+          "measure": "km",
+          "value": 8,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Calentamiento. Trote suave de asimilación activa."
+        },
+        {
+          "id": "58b6fcce-de71-4796-a6b5-771ea7360d02",
+          "day": "Jueves",
+          "category": "larga",
+          "name": "Carrera en cerro",
+          "zone": "Z2",
+          "measure": "min",
+          "value": 60,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Calentamiento. Trote controlado en terreno con desnivel variable."
+        },
+        {
+          "id": "20f9a386-9d33-4752-a7da-47e4f53a125e",
+          "day": "Viernes",
+          "category": "fartlek",
+          "name": "Fartlek",
+          "zone": "Z4",
+          "measure": "km",
+          "value": 8,
+          "reps": 6,
+          "distance": 1000,
+          "pause": "1:30 trote rec.",
+          "description": "Calentamiento. Cambios de ritmo controlados."
+        },
+        {
+          "id": "d67ea9a9-c5bc-45e3-abe6-7d6f443be210",
+          "day": "Sábado",
+          "category": "corta",
+          "name": "Trote ligero",
+          "zone": "Z1",
+          "measure": "km",
+          "value": 6,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Trote regenerativo muy suave previo al descanso."
+        },
+        {
+          "id": "53e0c97b-b812-40d6-b1f9-6a426dc1373e",
+          "day": "Domingo",
+          "category": "descanso",
+          "name": "Descanso",
+          "zone": "-",
+          "measure": "km",
+          "value": 0,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Descanso total."
+        }
+      ]
+    },
+    {
+      "id": "seydi-rios",
+      "name": "SEYDI RIOS",
+      "paces": {
+        "Z5": [
+          "04:30",
+          "04:40"
+        ],
+        "Z4": [
+          "04:55",
+          "05:00"
+        ],
+        "Z3": [
+          "05:10",
+          "05:30"
+        ],
+        "Z2": [
+          "05:40",
+          "06:00"
+        ],
+        "Z1": [
+          "06:00",
+          "06:30"
+        ]
+      },
+      "week": [
+        {
+          "id": "4ab7d5e9-4117-492e-9ca2-543064ea29e8",
+          "day": "Lunes",
+          "category": "media",
+          "name": "Distancia media",
+          "zone": "Z2",
+          "measure": "km",
+          "value": 12,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Calentamiento. Trote continuo estable. Flexo-elasticidad."
+        },
+        {
+          "id": "7e57bdf4-8f3f-49ce-8a1b-37d2fbcc0b00",
+          "day": "Martes",
+          "category": "intervalos",
+          "name": "Intervalos",
+          "zone": "Z5",
+          "measure": "km",
+          "value": 10,
+          "reps": 10,
+          "distance": 600,
+          "pause": "200 m trote rec.",
+          "description": "Calentamiento. Trabajo fraccionado en pista."
+        },
+        {
+          "id": "6ba1bb14-f6b4-404f-ba32-6a87529f7358",
+          "day": "Miércoles",
+          "category": "corta",
+          "name": "Distancia corta",
+          "zone": "Z2",
+          "measure": "km",
+          "value": 8,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Calentamiento. Trote suave de asimilación activa."
+        },
+        {
+          "id": "316ad180-0248-40d3-b186-07c6da9c6bf4",
+          "day": "Jueves",
+          "category": "larga",
+          "name": "Carrera en cerro",
+          "zone": "Z2",
+          "measure": "min",
+          "value": 60,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Calentamiento. Trote controlado en terreno con desnivel variable."
+        },
+        {
+          "id": "e823f4bb-5fac-4ebc-b8f8-2853e1d06d80",
+          "day": "Viernes",
+          "category": "fartlek",
+          "name": "Fartlek",
+          "zone": "Z4",
+          "measure": "km",
+          "value": 8,
+          "reps": 6,
+          "distance": 1000,
+          "pause": "1:30 trote rec.",
+          "description": "Calentamiento. Cambios de ritmo controlados."
+        },
+        {
+          "id": "3679b3fa-643a-435b-a44c-bed473c74cf3",
+          "day": "Sábado",
+          "category": "corta",
+          "name": "Trote ligero",
+          "zone": "Z1",
+          "measure": "km",
+          "value": 6,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Trote regenerativo muy suave previo al descanso."
+        },
+        {
+          "id": "1d0939a5-78e3-472d-b333-b390f004da44",
+          "day": "Domingo",
+          "category": "descanso",
+          "name": "Descanso",
+          "zone": "-",
+          "measure": "km",
+          "value": 0,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Descanso total."
+        }
+      ]
+    },
+    {
+      "id": "olga-reyes",
+      "name": "OLGA REYES",
+      "paces": {
+        "Z5": [
+          "04:30",
+          "04:40"
+        ],
+        "Z4": [
+          "04:55",
+          "05:00"
+        ],
+        "Z3": [
+          "05:10",
+          "05:30"
+        ],
+        "Z2": [
+          "05:40",
+          "06:00"
+        ],
+        "Z1": [
+          "06:00",
+          "06:30"
+        ]
+      },
+      "week": [
+        {
+          "id": "61bf0caa-2e44-4ecd-a642-51ff21b2dba2",
+          "day": "Lunes",
+          "category": "media",
+          "name": "Distancia media",
+          "zone": "Z2",
+          "measure": "km",
+          "value": 12,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Calentamiento. Trote continuo estable. Flexo-elasticidad."
+        },
+        {
+          "id": "473d48d6-2cdd-4412-b97d-353e37a9ab94",
+          "day": "Martes",
+          "category": "intervalos",
+          "name": "Intervalos",
+          "zone": "Z5",
+          "measure": "km",
+          "value": 10,
+          "reps": 10,
+          "distance": 600,
+          "pause": "200 m trote rec.",
+          "description": "Calentamiento. Trabajo fraccionado en pista."
+        },
+        {
+          "id": "fea7428c-0a54-4f28-87ab-41ece0c22bc2",
+          "day": "Miércoles",
+          "category": "corta",
+          "name": "Distancia corta",
+          "zone": "Z2",
+          "measure": "km",
+          "value": 8,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Calentamiento. Trote suave de asimilación activa."
+        },
+        {
+          "id": "5f507026-e694-445f-bbd3-889d43c2a899",
+          "day": "Jueves",
+          "category": "larga",
+          "name": "Carrera en cerro",
+          "zone": "Z2",
+          "measure": "min",
+          "value": 60,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Calentamiento. Trote controlado en terreno con desnivel variable."
+        },
+        {
+          "id": "0bb5f115-42eb-41c3-a569-063833e81a1d",
+          "day": "Viernes",
+          "category": "fartlek",
+          "name": "Fartlek",
+          "zone": "Z4",
+          "measure": "km",
+          "value": 8,
+          "reps": 6,
+          "distance": 1000,
+          "pause": "1:30 trote rec.",
+          "description": "Calentamiento. Cambios de ritmo controlados."
+        },
+        {
+          "id": "44d4e0db-96d3-4fc5-975e-0a282b1cc727",
+          "day": "Sábado",
+          "category": "corta",
+          "name": "Trote ligero",
+          "zone": "Z1",
+          "measure": "km",
+          "value": 6,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Trote regenerativo muy suave previo al descanso."
+        },
+        {
+          "id": "59c8e36d-2088-4468-be37-64f966153f1e",
+          "day": "Domingo",
+          "category": "descanso",
+          "name": "Descanso",
+          "zone": "-",
+          "measure": "km",
+          "value": 0,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Descanso total."
+        }
+      ]
+    },
+    {
+      "id": "saul-flores",
+      "name": "SAUL FLORES",
+      "paces": {
+        "Z5": [
+          "03:30",
+          "03:40"
+        ],
+        "Z4": [
+          "03:55",
+          "04:10"
+        ],
+        "Z3": [
+          "04:20",
+          "04:40"
+        ],
+        "Z2": [
+          "04:50",
+          "05:15"
+        ],
+        "Z1": [
+          "05:25",
+          "05:55"
+        ]
+      },
+      "week": [
+        {
+          "id": "f774dc1e-1a9e-4ac6-bce9-8a657972cc5a",
+          "day": "Lunes",
+          "category": "media",
+          "name": "Distancia media",
+          "zone": "Z2",
+          "measure": "km",
+          "value": 12,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Calentamiento. Trote continuo estable. Flexo-elasticidad."
+        },
+        {
+          "id": "9948bfa3-aa6d-4b24-982b-ffbece62c0e1",
+          "day": "Martes",
+          "category": "intervalos",
+          "name": "Intervalos",
+          "zone": "Z5",
+          "measure": "km",
+          "value": 10,
+          "reps": 10,
+          "distance": 600,
+          "pause": "200 m trote rec.",
+          "description": "Calentamiento. Trabajo fraccionado en pista."
+        },
+        {
+          "id": "e0a689cf-36f1-448f-9c0b-14fb59e69e14",
+          "day": "Miércoles",
+          "category": "corta",
+          "name": "Distancia corta",
+          "zone": "Z2",
+          "measure": "km",
+          "value": 8,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Calentamiento. Trote suave de asimilación activa."
+        },
+        {
+          "id": "28bb1c0c-2410-47db-940a-daf152a9d6e8",
+          "day": "Jueves",
+          "category": "larga",
+          "name": "Carrera en cerro",
+          "zone": "Z2",
+          "measure": "min",
+          "value": 60,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Calentamiento. Trote controlado en terreno con desnivel variable."
+        },
+        {
+          "id": "6e458606-294f-47ca-a58d-d681605500e4",
+          "day": "Viernes",
+          "category": "fartlek",
+          "name": "Fartlek",
+          "zone": "Z4",
+          "measure": "km",
+          "value": 8,
+          "reps": 6,
+          "distance": 1000,
+          "pause": "1:30 trote rec.",
+          "description": "Calentamiento. Cambios de ritmo controlados."
+        },
+        {
+          "id": "c1342a15-3554-472b-a6b2-6e2137713f6f",
+          "day": "Sábado",
+          "category": "corta",
+          "name": "Trote ligero",
+          "zone": "Z1",
+          "measure": "km",
+          "value": 6,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Trote regenerativo muy suave previo al descanso."
+        },
+        {
+          "id": "f00d47ca-660a-4f0b-b744-15441d5c76fd",
+          "day": "Domingo",
+          "category": "descanso",
+          "name": "Descanso",
+          "zone": "-",
+          "measure": "km",
+          "value": 0,
+          "reps": 0,
+          "distance": 0,
+          "pause": "",
+          "description": "Descanso total."
+        }
+      ]
+    }
+  ],
+  "metadata": {
+    "updatedAt": "2026-07-20T07:31:19.976Z",
+    "lastBackupAt": "2026-07-20T07:31:19.976Z"
+  }
+}

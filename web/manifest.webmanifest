@@ -1,0 +1,13 @@
+{
+  "id": "/",
+  "name": "Andrés Trainer · Master Endurance",
+  "short_name": "Andrés Trainer",
+  "description": "Gestión de atletas y planificación semanal de atletismo.",
+  "lang": "es-MX",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f2f6fa",
+  "theme_color": "#071426",
+  "icons": [{"src":"/static/icon.svg","sizes":"any","type":"image/svg+xml","purpose":"any maskable"}]
+}

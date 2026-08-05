@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE = 'andres-trainer-v6';
+const CACHE = 'andres-trainer-v7';
 const SHELL = [
   '/', '/static/styles.css', '/static/app.js',
   '/static/oxyfield.js', '/static/runstats.js',

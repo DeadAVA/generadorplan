@@ -103,7 +103,10 @@
     }
 
     if (!navigator.bluetooth) {
-      typeof toast === 'function' && toast('Web Bluetooth no disponible en este navegador/contexto.', true);
+      typeof toast === 'function' && toast(
+        'Web Bluetooth no está disponible. Usa Google Chrome o Microsoft Edge en computadora o Android. Safari y Firefox no son compatibles.',
+        true
+      );
       return;
     }
 
@@ -111,7 +114,11 @@
 
     try {
       const device = await navigator.bluetooth.requestDevice({
-        filters: [{ services: ['heart_rate'] }]
+        filters: [
+          { services: ['heart_rate'] },
+          { namePrefix: 'Polar' }
+        ],
+        optionalServices: ['heart_rate']
       });
       device.addEventListener('gattserverdisconnected', () => {
         a.device = null; a.bpm = 0;
@@ -125,7 +132,6 @@
       char.addEventListener('characteristicvaluechanged', ev => {
         const dv = ev.target.value, f = dv.getUint8(0);
         a.bpm = (f & 1) === 0 ? dv.getUint8(1) : dv.getUint16(1, true);
-        // Actualizar displays en tiempo real
         const bpmEl = document.getElementById(`oxyf-bpm-${a.id}`);
         if (bpmEl) bpmEl.textContent = a.bpm;
         const stripEl = document.getElementById(`oxyf-strip-bpm-${a.id}`);
@@ -136,7 +142,14 @@
       typeof toast === 'function' && toast(`✅ Polar H10 conectado → ${a.nombre}`);
     } catch (e) {
       a.bpm = 0; renderAthleteList();
-      if (e.name !== 'NotFoundError') {
+      if (e.name === 'NotFoundError') {
+        typeof toast === 'function' && toast(
+          'No se encontró ningún dispositivo. Verifica: 1) La banda H10 debe estar puesta con contacto en la piel (no funciona sobre la mesa). 2) Bluetooth activado. 3) Si no aparece en la lista, mójala levemente.',
+          true
+        );
+      } else if (e.name === 'SecurityError') {
+        typeof toast === 'function' && toast('Permiso Bluetooth denegado. Revisa los permisos del sitio en el navegador.', true);
+      } else {
         typeof toast === 'function' && toast('Error Bluetooth: ' + e.message, true);
       }
     }

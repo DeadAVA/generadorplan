@@ -11,6 +11,7 @@
   let atletasDetectados = new Set();
   let atletaSeleccionado = '';
   let rsChartInforme = null;
+  let rsChartVisible = null;
 
   function limpiarCelda(t) { return t ? t.replace(/^["']|["']$/g, '').trim() : ''; }
 
@@ -104,7 +105,7 @@
     atletaSeleccionado = sel.value;
     if (!atletaSeleccionado) return;
     const registros = datosCompletos.filter(d => d.atleta === atletaSeleccionado);
-    const tbody = document.getElementById('rs-tablaCuerpo');
+    const tbody    = document.getElementById('rs-tablaCuerpo');
     const contador = document.getElementById('rs-contador');
     if (contador) contador.textContent = `${registros.length} Registros`;
     if (!tbody) return;
@@ -113,37 +114,187 @@
     registros.forEach(r => {
       sumaStress += r.stressScore;
       cargaAcum  += r.cargaInterna;
-      const sc = r.slope === null ? '-' : (r.slope >= 0 ? `+${r.slope}` : `${r.slope}`);
-      const scColor = r.slope !== null && r.slope < 0 ? 'color:#ef4444;font-weight:bold' : (r.slope > 0 ? 'color:#22c55e' : 'color:#94a3b8');
+      const sc = r.slope === null ? '—' : (r.slope >= 0 ? `▲ +${r.slope}` : `▼ ${r.slope}`);
+      const scCls = r.slope !== null && r.slope < 0 ? 'rs-slope-down' : (r.slope > 0 ? 'rs-slope-up' : '');
       tbody.innerHTML += `<tr>
-        <td>${r.fecha}</td><td>${r.duracion} min</td><td>${r.borg}/10</td>
-        <td style="color:#c026d3;font-weight:bold">${r.cargaInterna} UA</td>
-        <td style="font-weight:bold">${r.rmssd}</td>
-        <td style="color:#f59e0b">${r.stressScore}</td>
-        <td style="color:#06b6d4">${r.ratioS_PS}</td>
-        <td style="${scColor}">${sc} ms</td>
+        <td><strong>${r.fecha}</strong></td>
+        <td>${r.duracion} min</td>
+        <td><span class="rs-borg rs-borg-${Math.round(r.borg)}">${r.borg}/10</span></td>
+        <td class="rs-td-carga">${r.cargaInterna} UA</td>
+        <td class="rs-td-rmssd">${r.rmssd}</td>
+        <td class="rs-td-stress">${r.stressScore}</td>
+        <td class="rs-td-ratio">${r.ratioS_PS}</td>
+        <td class="${scCls}">${sc} ms</td>
       </tr>`;
     });
     const ultimo = registros[registros.length - 1];
     if (!ultimo) return;
+
+    // KPIs
+    const avgStress = (sumaStress / registros.length).toFixed(1);
     const kpiR = document.getElementById('rs-kpiRmssd');
     const kpiC = document.getElementById('rs-kpiCarga');
     const kpiS = document.getElementById('rs-kpiStress');
     const kpiX = document.getElementById('rs-kpiSexo');
-    if (kpiR) kpiR.textContent = `${ultimo.rmssd} ms`;
-    if (kpiC) kpiC.textContent = `${cargaAcum} UA`;
-    if (kpiS) kpiS.textContent = (sumaStress / registros.length).toFixed(1);
+    if (kpiR) kpiR.innerHTML = `${ultimo.rmssd} <span>ms</span>`;
+    if (kpiC) kpiC.innerHTML = `${cargaAcum} <span>UA</span>`;
+    if (kpiS) kpiS.textContent = avgStress;
     if (kpiX) kpiX.textContent = ultimo.sexo;
+
+    // Mini barras de progreso KPI
+    const setBar = (id, pct) => {
+      const el = document.getElementById(id);
+      if (el) el.style.setProperty('--bar-pct', Math.min(100, pct) + '%');
+    };
+    const maxRmssd = Math.max(...registros.map(r => r.rmssd), 1);
+    setBar('rs-barRmssd', (ultimo.rmssd / maxRmssd) * 100);
+    setBar('rs-barCarga', Math.min(cargaAcum / 20, 100));
+    setBar('rs-barStress', Math.min(parseFloat(avgStress) * 10, 100));
+
+    // Estado autonómico
+    const estadoEl = document.getElementById('rs-kpiEstado');
+    if (estadoEl) {
+      const alert = ultimo.slope !== null && ultimo.slope < -15;
+      estadoEl.innerHTML = alert
+        ? '<span class="rs-estado-badge rs-estado-alerta">⚠️ Sobrecarga</span>'
+        : '<span class="rs-estado-badge rs-estado-ok">✅ Óptimo</span>';
+    }
+
+    // Diagnóstico
     const diag = document.getElementById('rs-diagnostico');
     if (diag) {
       if (ultimo.slope !== null && ultimo.slope < -15) {
-        diag.innerHTML = `<p style="color:#ef4444;font-weight:bold;font-size:11px;text-transform:uppercase">⚠️ Sobrecarga / Respuesta Simpática Elevada</p>
-          <p>La acumulación de carga interna deprimió la actividad parasimpática (RMSSD-Slope: ${ultimo.slope} ms). Regula las cargas inmediatamente.</p>`;
+        diag.innerHTML = `
+          <div class="rs-diag-alert">
+            <div class="rs-diag-alert-title">⚠️ SOBRECARGA — RESPUESTA SIMPÁTICA ELEVADA</div>
+            <p>La carga acumulada (${cargaAcum} UA) deprimió la actividad parasimpática.<br>
+            RMSSD-Slope: <strong>${ultimo.slope} ms</strong> · Último RMSSD: <strong>${ultimo.rmssd} ms</strong></p>
+            <ul class="rs-diag-list">
+              <li>Reducir carga planificada <strong>35%</strong> las próximas 48 h</li>
+              <li>Priorizar trabajo regenerativo (RPE &lt; 3/10)</li>
+              <li>Monitorear FC de reposo al despertar</li>
+            </ul>
+          </div>`;
       } else {
-        diag.innerHTML = `<p style="color:#22c55e;font-weight:bold;font-size:11px;text-transform:uppercase">✅ Adaptación Funcional Óptima</p>
-          <p>El deportista asimila correctamente el volumen actual, manteniendo los valores de RMSSD estables.</p>`;
+        diag.innerHTML = `
+          <div class="rs-diag-ok">
+            <div class="rs-diag-ok-title">✅ ADAPTACIÓN FUNCIONAL ÓPTIMA</div>
+            <p>El atleta asimila correctamente el volumen actual.<br>
+            RMSSD estable en <strong>${ultimo.rmssd} ms</strong> · Carga acumulada: <strong>${cargaAcum} UA</strong></p>
+            <ul class="rs-diag-list">
+              <li>Mantener progresión planificada del microciclo</li>
+              <li>Continuar registro basal con Polar H10</li>
+            </ul>
+          </div>`;
       }
     }
+
+    // Actualizar gráfica visible
+    actualizarGraficaRS(registros);
+  }
+
+  function actualizarGraficaRS(registros) {
+    const canvas = document.getElementById('rs-chartCanvas');
+    if (!canvas || !window.Chart) return;
+    if (rsChartVisible) { rsChartVisible.destroy(); rsChartVisible = null; }
+
+    const ctx = canvas.getContext('2d');
+    const labels = registros.map(r => r.fecha);
+
+    // Gradiente RMSSD
+    const gradRmssd = ctx.createLinearGradient(0, 0, 0, canvas.offsetHeight || 260);
+    gradRmssd.addColorStop(0, 'rgba(79,70,229,.5)');
+    gradRmssd.addColorStop(1, 'rgba(79,70,229,.02)');
+
+    const datasets = [
+      {
+        type: 'bar', label: 'Carga Interna (UA)',
+        data: registros.map(r => r.cargaInterna),
+        backgroundColor: registros.map(r =>
+          r.cargaInterna > 500 ? 'rgba(217,70,239,.75)' :
+          r.cargaInterna > 300 ? 'rgba(217,70,239,.55)' : 'rgba(217,70,239,.35)'
+        ),
+        borderColor: '#d946ef', borderWidth: 1.5,
+        borderRadius: 6, borderSkipped: false,
+        yAxisID: 'y', order: 2
+      },
+      {
+        type: 'line', label: 'RMSSD (ms)',
+        data: registros.map(r => r.rmssd),
+        borderColor: '#4f46e5', backgroundColor: gradRmssd,
+        borderWidth: 3, tension: 0.4, fill: true,
+        pointRadius: 6, pointHoverRadius: 10,
+        pointBackgroundColor: '#fff', pointBorderColor: '#4f46e5', pointBorderWidth: 2.5,
+        yAxisID: 'y1', order: 1
+      },
+      {
+        type: 'line', label: 'SDNN (ms)',
+        data: registros.map(r => r.sdnn),
+        borderColor: '#10b981', backgroundColor: 'transparent',
+        borderWidth: 2.5, borderDash: [6, 4], tension: 0.3, fill: false,
+        pointRadius: 4, pointHoverRadius: 8,
+        pointBackgroundColor: '#10b981', pointBorderColor: '#fff', pointBorderWidth: 1.5,
+        yAxisID: 'y1', order: 1
+      }
+    ];
+
+    const chartLabel = document.getElementById('rs-chartLabel');
+    if (chartLabel) chartLabel.textContent = atletaSeleccionado;
+
+    rsChartVisible = new window.Chart(canvas, {
+      data: { labels, datasets },
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        animation: { duration: 500, easing: 'easeInOutQuart' },
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: {
+            position: 'top',
+            labels: {
+              font: { size: 12, weight: '700', family: 'Inter, sans-serif' },
+              usePointStyle: true, pointStyleWidth: 12,
+              color: '#1e293b', padding: 20
+            }
+          },
+          tooltip: {
+            backgroundColor: '#0b2748',
+            titleColor: '#74e4d7', bodyColor: '#c8ddf0',
+            titleFont: { size: 12, weight: '900' },
+            bodyFont: { size: 11.5 },
+            padding: 14, cornerRadius: 12,
+            borderColor: '#1e4080', borderWidth: 1,
+            callbacks: {
+              title: items => `📅 ${items[0].label}`,
+              label: item => {
+                if (item.dataset.label.includes('Carga')) return `  ⚡ ${item.dataset.label}: ${item.parsed.y} UA`;
+                return `  📡 ${item.dataset.label}: ${item.parsed.y} ms`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            grid: { color: 'rgba(203,213,225,.4)', drawBorder: false },
+            ticks: { font: { size: 11, weight: '700' }, color: '#64748b', maxRotation: 30 },
+            border: { display: false }
+          },
+          y: {
+            position: 'left',
+            title: { display: true, text: 'Carga Interna (UA)', font: { weight: '900', size: 11 }, color: '#d946ef' },
+            grid: { color: 'rgba(203,213,225,.3)', drawBorder: false },
+            ticks: { font: { size: 10 }, color: '#d946ef' },
+            border: { display: false }
+          },
+          y1: {
+            position: 'right',
+            title: { display: true, text: 'HRV (ms)', font: { weight: '900', size: 11 }, color: '#4f46e5' },
+            grid: { drawOnChartArea: false, drawBorder: false },
+            ticks: { font: { size: 10 }, color: '#4f46e5' },
+            border: { display: false }
+          }
+        }
+      }
+    });
   }
 
   // ── PDF / Gráfico ────────────────────────────────────────────

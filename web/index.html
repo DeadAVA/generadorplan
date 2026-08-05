@@ -85,79 +85,118 @@
 
       <!-- ══ OXYFIELD PRO ══════════════════════════════════════════ -->
       <section class="view" id="oxyfieldView">
-        <div class="oxy-topbar">
-          <div class="oxy-smo2-widget">
-            <span class="oxy-lbl">Moxi NIRS</span>
-            <span id="head-smo2" class="oxy-val">SmO₂: --%</span>
-          </div>
-        </div>
-        <div class="oxy-layout">
-          <!-- Panel izquierdo: control -->
-          <div class="oxy-panel-left">
-            <div class="oxy-card">
-              <div class="oxy-card-title">📋 Panel de Control de Test</div>
-              <div id="main-cronometro" class="oxy-cronometro">00:00.00</div>
-              <div class="oxy-controls">
-                <button class="oxy-btn oxy-green" id="oxyBtnStart">Iniciar</button>
-                <button class="oxy-btn oxy-orange" id="oxyBtnPause">Pausar</button>
-                <button class="oxy-btn oxy-gray" id="oxyBtnReset">Reiniciar</button>
-              </div>
 
-              <div class="oxy-field-group">
-                <label class="oxy-label">1. PROTOCOLO</label>
-                <div class="oxy-row">
-                  <select id="protocolo-selector" style="flex:1"></select>
-                  <button class="oxy-icon-btn oxy-green" id="oxyAddProtocol" title="Agregar">+</button>
-                  <button class="oxy-icon-btn oxy-orange" id="oxyEditProtocol" title="Editar">✏️</button>
-                  <button class="oxy-icon-btn oxy-red" id="oxyDelProtocol" title="Eliminar">🗑️</button>
+        <!-- Barra viva de FC por atleta -->
+        <div id="oxyf-hr-strip" class="oxyf-hr-strip" style="display:none"></div>
+
+        <div class="oxyf-shell">
+
+          <!-- ── Sidebar de control ── -->
+          <aside class="oxyf-sidebar">
+
+            <!-- Protocolo -->
+            <div class="oxyf-panel">
+              <div class="oxyf-panel-title">🧪 Protocolo de Test</div>
+              <div class="oxyf-row">
+                <select id="protocolo-selector" class="oxyf-select"></select>
+                <button class="oxyf-mini-btn oxyf-blue"  id="oxyAddProtocol"  title="Nuevo">＋</button>
+                <button class="oxyf-mini-btn oxyf-amber" id="oxyEditProtocol" title="Editar">✏</button>
+                <button class="oxyf-mini-btn oxyf-rose"  id="oxyDelProtocol"  title="Eliminar">✕</button>
+              </div>
+              <div id="oxyf-proto-badge" class="oxyf-proto-badge"></div>
+            </div>
+
+            <!-- Atletas -->
+            <div class="oxyf-panel">
+              <div class="oxyf-panel-title">👤 Atletas en Test</div>
+              <div class="oxyf-input-group">
+                <input id="atleta-id"     type="text"   placeholder="ID"     maxlength="4" value="01">
+                <input id="atleta-nombre" type="text"   placeholder="Nombre" style="flex:2">
+                <input id="atleta-edad"   type="number" placeholder="Edad"   min="5" max="99" value="25">
+              </div>
+              <div class="oxyf-row" style="gap:6px;margin-bottom:10px">
+                <button class="oxyf-action-btn oxyf-blue"  id="oxyAddAthlete">＋ Agregar atleta</button>
+                <button class="oxyf-action-btn oxyf-slate" id="oxyImportAthletes" title="Importar desde base de datos">⬇ BD</button>
+              </div>
+              <div id="lista-atletas-registro" class="oxyf-athlete-list">
+                <div class="oxyf-empty-list">Agrega atletas para comenzar el test</div>
+              </div>
+            </div>
+
+            <!-- Control de Test -->
+            <div class="oxyf-panel oxyf-ctrl-panel">
+              <div class="oxyf-panel-title">⚙️ Control de Test</div>
+              <div id="main-cronometro" class="oxyf-crono">00:00.00</div>
+              <div class="oxyf-stage-grid">
+                <div class="oxyf-stage-item">
+                  <span class="oxyf-stage-lbl">Etapa</span>
+                  <strong id="oxyf-stage">—</strong>
+                </div>
+                <div class="oxyf-stage-item">
+                  <span class="oxyf-stage-lbl">Distancia</span>
+                  <strong id="oxyf-dist">—</strong>
+                </div>
+                <div class="oxyf-stage-item">
+                  <span class="oxyf-stage-lbl">Velocidad</span>
+                  <strong id="oxyf-vel">—</strong>
                 </div>
               </div>
-
-              <div class="oxy-field-group">
-                <label class="oxy-label">2. REGISTRAR ATLETA</label>
-                <div class="oxy-row">
-                  <input type="text" id="atleta-id" style="width:22%" value="01" placeholder="ID">
-                  <input type="text" id="atleta-nombre" style="width:50%" placeholder="Nombre">
-                  <input type="text" id="atleta-edad" style="width:22%" value="30" placeholder="Edad">
-                </div>
+              <div class="oxyf-ctrl-row">
+                <button id="oxyBtnStart" class="oxyf-ctrl-btn oxyf-start">▶ Iniciar</button>
+                <button id="oxyBtnPause" class="oxyf-ctrl-btn oxyf-pause" disabled>⏸</button>
+                <button id="oxyBtnReset" class="oxyf-ctrl-btn oxyf-reset" disabled>↺</button>
               </div>
-              <div class="oxy-row" style="margin-bottom:10px;gap:6px">
-                <button class="oxy-btn-submit" id="oxyAddAthlete" style="flex:1">＋ Insertar Atleta</button>
-                <button class="btn secondary compact" id="oxyImportAthletes" title="Importar atletas desde la base de datos">⬇ BD</button>
-              </div>
-
-              <label class="oxy-label">ATLETAS ACTIVOS</label>
-              <div id="lista-atletas-registro" class="oxy-atleta-list"></div>
-            </div>
-          </div>
-
-          <!-- Panel derecho: resultados -->
-          <div class="oxy-panel-right">
-            <div class="oxy-card">
-              <div id="titulo-tabla" class="oxy-card-title">🧬 TELEMETRÍA INTEGRADA</div>
-              <div class="oxy-table-scroll">
-                <table><thead id="encabezado-tabla"></thead><tbody id="cuerpo-tabla"></tbody></table>
-              </div>
-            </div>
-
-            <div class="oxy-card">
-              <div class="oxy-card-title">📊 FC Dinámica vs Carga de Velocidad</div>
-              <div class="oxy-chart-container">
-                <canvas id="canvasGrafico"></canvas>
-              </div>
-            </div>
-
-            <div class="oxy-card">
-              <div class="oxy-card-title">📄 Reporte Clínico e Interpretación Fisiológica</div>
-              <div id="cuerpo-interpretacion" class="oxy-report-body">
-                <p style="text-align:center;color:#64748b;font-style:italic;margin:0">
-                  El análisis fisiológico se autogenerará conforme se registren lecturas de esfuerzo.
-                </p>
-              </div>
-              <button class="oxy-btn-submit" id="oxyPrintReport" style="background:#1a73e8;margin-top:12px">
-                🖨️ Imprimir Reporte de Campo Clínico
+              <button id="oxyBtnRegistrar" class="oxyf-register-btn" disabled>
+                ⬤ REGISTRAR LECTURA
               </button>
+              <!-- Cooper: distancia final -->
+              <div id="oxyf-extra-cooper" class="oxyf-extra-box" style="display:none">
+                <div class="oxyf-extra-title">📏 Distancia total (Cooper)</div>
+                <div class="oxyf-row" style="gap:6px">
+                  <input id="oxyf-cooper-m" type="number" placeholder="metros ej. 2800" min="100" max="6000">
+                  <button class="oxyf-action-btn oxyf-blue" id="oxyBtnCooperCalc">Calcular VO₂</button>
+                </div>
+              </div>
+              <!-- George-Fisher: peso atleta -->
+              <div id="oxyf-extra-gf" class="oxyf-extra-box" style="display:none">
+                <div class="oxyf-extra-title">⚖️ Datos para VO₂máx (George-Fisher)</div>
+                <input id="oxyf-gf-weight" type="number" placeholder="Peso del atleta (kg)" min="30" max="200">
+              </div>
             </div>
+
+          </aside>
+
+          <!-- ── Panel de datos ── -->
+          <div class="oxyf-data-panel">
+
+            <!-- Tabla telemetría -->
+            <div class="oxyf-panel oxyf-table-panel">
+              <div class="oxyf-panel-title" id="titulo-tabla">📊 Telemetría — Course Navette</div>
+              <div class="oxyf-tbl-scroll">
+                <table class="oxyf-table">
+                  <thead id="encabezado-tabla"></thead>
+                  <tbody id="cuerpo-tabla">
+                    <tr><td colspan="10" class="oxyf-tbl-empty">Inicia el test y presiona REGISTRAR para capturar lecturas</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Gráfico FC -->
+            <div class="oxyf-panel oxyf-chart-panel">
+              <div class="oxyf-panel-title">📈 FC Dinámica vs Carga de Velocidad</div>
+              <div class="oxyf-chart-box"><canvas id="canvasGrafico"></canvas></div>
+            </div>
+
+            <!-- Reporte -->
+            <div class="oxyf-panel">
+              <div class="oxyf-panel-title">🩺 Interpretación Fisiológica</div>
+              <div id="cuerpo-interpretacion" class="oxyf-report">
+                <p class="oxyf-report-empty">El reporte se genera al registrar lecturas de esfuerzo.</p>
+              </div>
+              <button id="oxyPrintReport" class="oxyf-print-btn">🖨 Imprimir Reporte Clínico</button>
+            </div>
+
           </div>
         </div>
       </section>
@@ -206,10 +245,41 @@
 
           <!-- KPIs -->
           <div class="rs-kpi-grid">
-            <div class="rs-kpi"><p>Último RMSSD Basal</p><h3 id="rs-kpiRmssd">— <span>ms</span></h3></div>
-            <div class="rs-kpi"><p>Carga Interna Semanal</p><h3 id="rs-kpiCarga" style="color:#c026d3">— <span>UA</span></h3></div>
-            <div class="rs-kpi"><p>Stress Score Promedio</p><h3 id="rs-kpiStress" style="color:#f59e0b">—</h3></div>
-            <div class="rs-kpi"><p>Sexo Biológico</p><h3 id="rs-kpiSexo" style="color:#6366f1">—</h3></div>
+            <div class="rs-kpi rs-kpi--rmssd">
+              <div class="rs-kpi-icon">📡</div>
+              <p>Último RMSSD Basal</p>
+              <h3 id="rs-kpiRmssd">— <span>ms</span></h3>
+              <div class="rs-kpi-bar" id="rs-barRmssd" style="--bar-pct:0%;--bar-color:#4f46e5"></div>
+            </div>
+            <div class="rs-kpi rs-kpi--carga">
+              <div class="rs-kpi-icon">⚡</div>
+              <p>Carga Interna Semanal</p>
+              <h3 id="rs-kpiCarga" style="color:#c026d3">— <span>UA</span></h3>
+              <div class="rs-kpi-bar" id="rs-barCarga" style="--bar-pct:0%;--bar-color:#c026d3"></div>
+            </div>
+            <div class="rs-kpi rs-kpi--stress">
+              <div class="rs-kpi-icon">🌡️</div>
+              <p>Stress Score Promedio</p>
+              <h3 id="rs-kpiStress" style="color:#f59e0b">—</h3>
+              <div class="rs-kpi-bar" id="rs-barStress" style="--bar-pct:0%;--bar-color:#f59e0b"></div>
+            </div>
+            <div class="rs-kpi rs-kpi--diag">
+              <div class="rs-kpi-icon">🏷️</div>
+              <p>Estado Autonómico</p>
+              <h3 id="rs-kpiSexo" style="color:#6366f1;font-size:1rem">—</h3>
+              <div id="rs-kpiEstado" class="rs-kpi-estado"></div>
+            </div>
+          </div>
+
+          <!-- Gráfica visible interactiva -->
+          <div class="rs-card rs-chart-card">
+            <div class="rs-card-title">
+              📈 Evolución HRV vs Carga Interna
+              <span id="rs-chartLabel" class="rs-badge-count">Seleccione un atleta</span>
+            </div>
+            <div class="rs-chart-container">
+              <canvas id="rs-chartCanvas"></canvas>
+            </div>
           </div>
 
           <!-- Tabla + consola -->
@@ -292,6 +362,20 @@
     <form id="planForm">
       <header class="modal-head"><div><p class="kicker">Semana de entrenamiento</p><h2 id="planModalTitle">Nuevo plan</h2></div><button type="button" class="icon-btn" data-close="planDialog">×</button></header>
       <div class="modal-body">
+        <!-- Selector de plantilla — solo visible al crear plan nuevo -->
+        <div id="planTemplateSection" class="template-banner" style="display:none">
+          <div class="template-banner-left">
+            <span class="template-icon">⧉</span>
+            <div>
+              <strong>Usar plan existente como plantilla</strong>
+              <p>Elige un plan para copiar su estructura de ejercicios. Puedes cambiar atleta, fechas y tiempos.</p>
+            </div>
+          </div>
+          <div class="template-row">
+            <select id="planTemplateSelect"><option value="">— Elige una plantilla —</option></select>
+            <button type="button" class="btn primary compact" id="planTemplateApply">Cargar</button>
+          </div>
+        </div>
         <div class="form-grid four">
           <label class="span-2">Atleta<select id="planAthlete" required></select></label>
           <label class="span-2">Título<input id="planTitle" value="Plan semanal" required maxlength="140"></label>

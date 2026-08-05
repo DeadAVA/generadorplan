@@ -167,7 +167,7 @@ function renderPlans() {
       <div><h3>${escapeHtml(plan.title)}</h3><p>${escapeHtml(plan.athlete_name)} · Semana ${plan.week_number}</p></div>
       <div><small>Periodo</small><p>${localDate(plan.start_date)} – ${localDate(plan.end_date)}</p></div>
       <div><small>Carga</small><p>${plan.weekly_km || 0} km · ${plan.hours_per_week || 0} hrs.</p></div>
-      <div class="plan-actions"><span class="pill">${statusLabel(plan.status)}</span><button class="icon-btn" title="Imprimir" data-plan-print="${plan.id}">▤</button><button class="icon-btn" title="Editar" data-plan-edit="${plan.id}">✎</button><button class="icon-btn" title="Eliminar" data-plan-delete="${plan.id}">×</button></div>
+      <div class="plan-actions"><span class="pill">${statusLabel(plan.status)}</span><button class="icon-btn" title="Usar como plantilla" data-plan-clone="${plan.id}">⧉</button><button class="icon-btn" title="Imprimir" data-plan-print="${plan.id}">▤</button><button class="icon-btn" title="Editar" data-plan-edit="${plan.id}">✎</button><button class="icon-btn" title="Eliminar" data-plan-delete="${plan.id}">×</button></div>
     </article>`).join('') : '<div class="empty">No hay planes con estos filtros.</div>';
 }
 
@@ -184,6 +184,10 @@ function switchView(view) {
   document.querySelectorAll('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.view === view));
   const titles = { dashboard:'Resumen', athletes:'Atletas', plans:'Planes semanales', oxyfield:'OxyField Pro', runstats:'RUN-STATS HRV' };
   $('viewTitle').textContent = titles[view] || view;
+  // Ocultar acciones globales del topbar en módulos especializados
+  const hideTopActions = view === 'oxyfield' || view === 'runstats';
+  const topActions = $('topActions');
+  if (topActions) topActions.style.visibility = hideTopActions ? 'hidden' : 'visible';
   if (view === 'oxyfield' && typeof window.oxyfieldInit === 'function') window.oxyfieldInit();
 }
 
@@ -297,8 +301,9 @@ function renderDaysEditor(days) {
 
 function fillPlanForm(plan = null, preferredAthleteId = null) {
   state.editingPlanId = plan?.id || null;
+  const isNew = !plan?.id;
   const start = plan?.start_date || mondayOfCurrentWeek();
-  $('planModalTitle').textContent = plan ? 'Editar plan semanal' : 'Nuevo plan semanal';
+  $('planModalTitle').textContent = plan?.id ? 'Editar plan semanal' : 'Nuevo plan semanal';
   $('planAthlete').value = plan?.athlete_id || preferredAthleteId || state.athletes[0]?.id || '';
   $('planTitle').value = plan?.title || 'Plan semanal'; $('planStart').value = start; $('planEnd').value = plan?.end_date || addDays(start,6);
   $('planWeek').value = plan?.week_number || isoWeek(start); $('planMonth').value = plan?.month_label || monthLabel(start);
@@ -306,11 +311,41 @@ function fillPlanForm(plan = null, preferredAthleteId = null) {
   $('planHours').value = plan?.hours_per_week || 0; $('planKm').value = plan?.weekly_km || 0; $('planStatus').value = plan?.status || 'draft';
   $('planGoal').value = plan?.goal || ''; $('planNotes').value = plan?.notes || '';
   renderDaysEditor(plan?.days || createEmptyDays(start));
+  // Sección de plantilla: solo visible al crear plan nuevo
+  const tplSection = $('planTemplateSection');
+  if (tplSection) {
+    tplSection.style.display = isNew ? 'flex' : 'none';
+    if (isNew) {
+      const sel = $('planTemplateSelect');
+      sel.innerHTML = '<option value="">— Elige una plantilla (opcional) —</option>' +
+        state.plans.map(p => `<option value="${p.id}">${escapeHtml(p.athlete_name)} · ${escapeHtml(p.title)} (S${p.week_number})</option>`).join('');
+      sel.value = '';
+    }
+  }
   $('planDialog').showModal();
 }
 
 async function openPlanDialog(id = null, athleteId = null) {
   try { fillPlanForm(id ? await api(`/api/plans/${id}`) : null, athleteId); } catch (error) { toast(error.message, true); }
+}
+
+async function applyPlanTemplate() {
+  const id = $('planTemplateSelect').value;
+  if (!id) { toast('Selecciona un plan primero.', true); return; }
+  try {
+    const plan = await api(`/api/plans/${id}`);
+    const start = $('planStart').value || mondayOfCurrentWeek();
+    const days = plan.days.map((day, i) => ({
+      ...day,
+      date: addDays(start, i),
+      code: codeForDate(addDays(start, i), i)
+    }));
+    renderDaysEditor(days);
+    $('planHours').value = plan.hours_per_week || 0;
+    $('planKm').value = plan.weekly_km || 0;
+    $('planGoal').value = plan.goal || '';
+    toast(`Estructura de "${plan.title}" cargada. Ajusta los tiempos y guarda.`);
+  } catch (error) { toast(error.message, true); }
 }
 
 function syncPlanDates() {
@@ -366,6 +401,29 @@ async function deletePlan(id) {
   try { await api(`/api/plans/${id}`,{method:'DELETE'});await loadAll();toast('Plan eliminado.'); } catch(error){toast(error.message,true);}
 }
 
+async function clonePlan(id) {
+  try {
+    const plan = await api(`/api/plans/${id}`);
+    const start = mondayOfCurrentWeek();
+    fillPlanForm({
+      ...plan,
+      id: null,
+      title: `Copia — ${plan.title}`,
+      start_date: start,
+      end_date: addDays(start, 6),
+      week_number: isoWeek(start),
+      month_label: monthLabel(start),
+      status: 'draft',
+      days: plan.days.map((day, i) => ({
+        ...day,
+        date: addDays(start, i),
+        code: codeForDate(addDays(start, i), i)
+      }))
+    });
+    toast(`Plantilla cargada: "${plan.title}". Ajusta y guarda como plan nuevo.`);
+  } catch (error) { toast(error.message, true); }
+}
+
 async function restoreBackup(event) {
   const file=event.target.files[0];event.target.value='';if(!file)return;
   const confirmed = await showConfirm('La restauración reemplazará todos los atletas y planes actuales. ¿Continuar?', '¿Restaurar base de datos?', 'Acción irreversible');
@@ -382,9 +440,9 @@ function bindEvents() {
   $('athleteGrid').addEventListener('click',event=>{const edit=event.target.closest('[data-athlete-edit]');const plan=event.target.closest('[data-athlete-plan]');const del=event.target.closest('[data-athlete-delete]');if(edit)openAthleteDialog(state.athletes.find(a=>a.id===edit.dataset.athleteEdit));if(plan)openPlanDialog(null,plan.dataset.athletePlan);if(del)deleteAthlete(del.dataset.athleteDelete);});
   for(const id of ['quickPlanBtn','newPlanBtn'])$(id).addEventListener('click',()=>openPlanDialog());
   for(const id of ['generateBtn','dashboardGenerateBtn'])$(id).addEventListener('click',()=>openGenerator());
-  $('generatorForm').addEventListener('submit',generatePlan);$('planForm').addEventListener('submit',savePlan);$('syncDatesBtn').addEventListener('click',syncPlanDates);$('planStart').addEventListener('change',syncPlanDates);
+  $('generatorForm').addEventListener('submit',generatePlan);$('planForm').addEventListener('submit',savePlan);$('syncDatesBtn').addEventListener('click',syncPlanDates);$('planStart').addEventListener('change',syncPlanDates);$('planTemplateApply').addEventListener('click',applyPlanTemplate);
   $('planAthleteFilter').addEventListener('change',renderPlans);$('planStatusFilter').addEventListener('change',renderPlans);
-  $('planList').addEventListener('click',event=>{const edit=event.target.closest('[data-plan-edit]');const print=event.target.closest('[data-plan-print]');const del=event.target.closest('[data-plan-delete]');if(edit)openPlanDialog(edit.dataset.planEdit);if(print)window.open(`/print?id=${print.dataset.planPrint}`,'_blank');if(del)deletePlan(del.dataset.planDelete);});
+  $('planList').addEventListener('click',event=>{const edit=event.target.closest('[data-plan-edit]');const print=event.target.closest('[data-plan-print]');const del=event.target.closest('[data-plan-delete]');const clone=event.target.closest('[data-plan-clone]');if(edit)openPlanDialog(edit.dataset.planEdit);if(print)window.open(`/print?id=${print.dataset.planPrint}`,'_blank');if(del)deletePlan(del.dataset.planDelete);if(clone)clonePlan(clone.dataset.planClone);});
   $('restoreBtn').addEventListener('click',()=>$('restoreFile').click());$('restoreFile').addEventListener('change',restoreBackup);
 }
 

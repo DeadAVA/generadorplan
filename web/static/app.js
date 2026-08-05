@@ -2,7 +2,9 @@
 
 const state = { athletes: [], plans: [], editingAthleteId: null, editingPlanId: null };
 const ZONES = ['Z5', 'Z4', 'Z3', 'Z2', 'Z1'];
-const DEFAULT_PACES = { Z5:['04:30','04:40'], Z4:['04:55','05:00'], Z3:['05:10','05:30'], Z2:['05:40','06:00'], Z1:['06:00','06:30'] };
+const DEFAULT_PACES = { Z5:['04:30','05:00'], Z4:['05:00','05:40'], Z3:['05:40','06:00'], Z2:['06:00','06:25'], Z1:['06:25','07:30'] };
+// Porcentajes de velocidad por zona. Base = Z5-min (100%). Pace ∝ 1/velocidad.
+const ZONE_PCTS = { Z5:{min:100,max:90}, Z4:{min:90,max:80}, Z3:{min:80,max:75}, Z2:{min:75,max:70}, Z1:{min:70,max:60} };
 const DAY_NAMES = ['Lunes','Martes','Miércoles','Jueves','Viernes','Sábado','Domingo'];
 const $ = (id) => document.getElementById(id);
 let toastTimer;
@@ -185,6 +187,48 @@ function switchView(view) {
   if (view === 'oxyfield' && typeof window.oxyfieldInit === 'function') window.oxyfieldInit();
 }
 
+// ── Cálculo de zonas de ritmo por porcentaje de velocidad ─────
+function parsePaceToSeconds(pace) {
+  if (!pace || typeof pace !== 'string') return 0;
+  const [rawMin, rawSec] = pace.trim().split(':');
+  const min = parseInt(rawMin, 10), sec = parseInt(rawSec, 10);
+  if (isNaN(min) || isNaN(sec) || sec < 0 || sec > 59 || min < 0) return 0;
+  return min * 60 + sec;
+}
+
+function calculatePaceBySpeedPercentage(baseSeconds, percentage) {
+  if (!baseSeconds || baseSeconds <= 0 || !percentage || percentage <= 0) return 0;
+  return baseSeconds / (percentage / 100);
+}
+
+function roundToNearestFiveSeconds(seconds) {
+  return Math.round(seconds / 5) * 5;
+}
+
+function formatSecondsToPace(seconds) {
+  if (!seconds || seconds <= 0) return '00:00';
+  const total = roundToNearestFiveSeconds(seconds);
+  const min = Math.floor(total / 60);
+  const sec = total % 60;
+  return `${String(min).padStart(2, '0')}:${String(sec).padStart(2, '0')}`;
+}
+
+function recalcPaceZones() {
+  const baseEl = document.getElementById('pace-Z5-min');
+  if (!baseEl) return;
+  const base = parsePaceToSeconds(baseEl.value);
+  if (!base || base <= 0) return;
+  ZONES.forEach(zone => {
+    const pcts = ZONE_PCTS[zone];
+    if (zone !== 'Z5') {
+      const minEl = document.getElementById(`pace-${zone}-min`);
+      if (minEl) minEl.value = formatSecondsToPace(calculatePaceBySpeedPercentage(base, pcts.min));
+    }
+    const maxEl = document.getElementById(`pace-${zone}-max`);
+    if (maxEl) maxEl.value = formatSecondsToPace(calculatePaceBySpeedPercentage(base, pcts.max));
+  });
+}
+
 function openAthleteDialog(athlete = null) {
   state.editingAthleteId = athlete?.id || null;
   $('athleteModalTitle').textContent = athlete ? 'Editar atleta' : 'Registrar atleta';
@@ -195,7 +239,16 @@ function openAthleteDialog(athlete = null) {
   $('athleteContact').value = athlete?.contact || '';
   $('athleteNotes').value = athlete?.notes || '';
   const paces = Object.fromEntries((athlete?.pace_zones || []).map(item => [item.zone, [item.pace_min, item.pace_max]]));
-  $('paceZoneFields').innerHTML = ZONES.map(zone => `<div class="zone-row"><strong>${zone}</strong><label>Rápido<input id="pace-${zone}-min" pattern="[0-9]{1,2}:[0-5][0-9]" value="${paces[zone]?.[0] || DEFAULT_PACES[zone][0]}" required></label><label>Suave<input id="pace-${zone}-max" pattern="[0-9]{1,2}:[0-5][0-9]" value="${paces[zone]?.[1] || DEFAULT_PACES[zone][1]}" required></label></div>`).join('');
+  $('paceZoneFields').innerHTML = ZONES.map(zone => {
+    const isBase = zone === 'Z5';
+    const roAttr = 'readonly style="background:#f3f7fb;color:#64748b;cursor:default"';
+    return `<div class="zone-row">
+      <strong>${zone}</strong>
+      <label>Rápido<input id="pace-${zone}-min" pattern="[0-9]{1,2}:[0-5][0-9]" value="${paces[zone]?.[0] || DEFAULT_PACES[zone][0]}" required ${isBase ? '' : roAttr}></label>
+      <label>Suave<input id="pace-${zone}-max" pattern="[0-9]{1,2}:[0-5][0-9]" value="${paces[zone]?.[1] || DEFAULT_PACES[zone][1]}" required ${roAttr}></label>
+    </div>`;
+  }).join('');
+  document.getElementById('pace-Z5-min')?.addEventListener('input', recalcPaceZones);
   $('athleteDialog').showModal();
 }
 

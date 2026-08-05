@@ -50,14 +50,17 @@ def health():
     return {"status": "ok", "version": APP_VERSION, "database": DATABASE_PATH.name, **counts}
 
 
+_NO_STORE = {"Cache-Control": "no-store, no-cache, must-revalidate", "Pragma": "no-cache"}
+
+
 @app.get("/", include_in_schema=False)
 def index():
-    return FileResponse(WEB_DIR / "index.html")
+    return FileResponse(WEB_DIR / "index.html", headers=_NO_STORE)
 
 
 @app.get("/print", include_in_schema=False)
 def print_plan():
-    return FileResponse(WEB_DIR / "print.html")
+    return FileResponse(WEB_DIR / "print.html", headers=_NO_STORE)
 
 
 @app.get("/manifest.webmanifest", include_in_schema=False)
@@ -67,7 +70,7 @@ def manifest():
 
 @app.get("/service-worker.js", include_in_schema=False)
 def service_worker():
-    return FileResponse(WEB_DIR / "service-worker.js", media_type="application/javascript")
+    return FileResponse(WEB_DIR / "service-worker.js", media_type="application/javascript", headers=_NO_STORE)
 
 
 app.mount("/static", StaticFiles(directory=WEB_DIR / "static"), name="static")

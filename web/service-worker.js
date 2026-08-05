@@ -1,6 +1,6 @@
 'use strict';
 
-const CACHE = 'andres-trainer-v7';
+const CACHE = 'andres-trainer-v8';
 const SHELL = [
   '/', '/static/styles.css', '/static/app.js',
   '/static/oxyfield.js', '/static/runstats.js',
@@ -9,7 +9,9 @@ const SHELL = [
 
 self.addEventListener('install', event => {
   event.waitUntil(
-    caches.open(CACHE).then(cache => cache.addAll(SHELL))
+    caches.open(CACHE).then(cache =>
+      cache.addAll(SHELL.map(url => new Request(url, { cache: 'no-cache' })))
+    )
   );
   self.skipWaiting();
 });
@@ -27,25 +29,22 @@ self.addEventListener('activate', event => {
 self.addEventListener('fetch', event => {
   const url = new URL(event.request.url);
 
-  // Ignorar métodos no-GET y llamadas a la API
   if (event.request.method !== 'GET' || url.pathname.startsWith('/api/')) return;
 
   event.respondWith(
-    fetch(event.request)
+    // cache:'no-cache' fuerza ir a la red ignorando la caché HTTP del browser
+    // (evita que Cloudflare max-age=14400 sirva archivos viejos al SW)
+    fetch(event.request, { cache: 'no-cache' })
       .then(response => {
-        // Clonar PRIMERO (síncronamente) antes de que nada consuma el body
         const toCache = (response.ok && url.origin === self.location.origin)
           ? response.clone()
           : null;
-
         if (toCache) {
           caches.open(CACHE).then(cache => cache.put(event.request, toCache));
         }
-
         return response;
       })
       .catch(() =>
-        // Red caída: servir desde caché, fallback a raíz
         caches.match(event.request).then(cached => cached || caches.match('/'))
       )
   );

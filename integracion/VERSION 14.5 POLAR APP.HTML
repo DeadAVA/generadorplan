@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RUN-STATS Tracker v13.0 — Triple Contrast Production</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen">
+
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50 px-6 py-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <div class="bg-fuchsia-600 p-2 rounded-lg text-white font-black tracking-wider text-sm">MIX</div>
+            <div>
+                <h1 class="text-md font-bold tracking-tight text-white uppercase">RUN-STATS Tracker <span class="text-xs text-fuchsia-400 font-mono">v13.0</span></h1>
+                <p class="text-xs text-slate-400">Motor de Triple Contraste Estructurado — Barras, Líneas Sólidas y Punteadas</p>
+            </div>
+        </div>
+        
+        <div class="flex flex-wrap items-center gap-3 w-full sm:w-auto justify-end">
+            <button id="btnBluetooth" onclick="conectarPolarH10()" class="bg-rose-600 hover:bg-rose-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition flex items-center gap-2 cursor-pointer shadow-md shadow-rose-950/40">
+                <span id="btIcono">🔵</span> <span id="btTexto">Conectar Banda Polar H10</span>
+            </button>
+            
+            <button onclick="generarInformePDF()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-lg text-xs transition flex items-center gap-1.5 cursor-pointer shadow-md shadow-indigo-900/20">
+                📄 Generar Informe Semanal Completo
+            </button>
+        </div>
+    </header>
+
+    <div class="p-6 max-w-7xl mx-auto space-y-6">
+        
+        <section id="panelLiveHR" class="hidden bg-gradient-to-r from-rose-950/30 to-slate-900 border border-rose-900/40 rounded-xl p-5 shadow-xl animate-pulse">
+            <div class="flex items-center justify-between border-b border-rose-900/30 pb-2 mb-3">
+                <div class="flex items-center gap-2 text-rose-400 font-bold text-xs uppercase tracking-wider">
+                    <span>❤️</span> TRANSMISIÓN EN VIVO DESDE POLAR H10
+                </div>
+                <span id="liveStatus" class="text-[10px] bg-rose-500/20 text-rose-300 border border-rose-500/30 px-2 py-0.5 rounded-full font-mono">CONECTADO</span>
+            </div>
+            <div class="flex items-baseline gap-2">
+                <span id="liveBPM" class="text-5xl font-mono font-black text-rose-500">0</span>
+                <span class="text-xs text-slate-400 font-sans uppercase">Pulsaciones por minuto (BPM)</span>
+            </div>
+        </section>
+
+        <section class="bg-slate-800/20 border border-slate-800 rounded-xl p-5 shadow-xl">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3 mb-4">
+                <div class="flex items-center gap-2">
+                    <span class="text-lg">📁</span>
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300">Cargar Base de Datos Operativa (.csv)</h2>
+                </div>
+            </div>
+            <div class="flex flex-col sm:flex-row items-center gap-4">
+                <input type="file" id="csvFileInput" accept=".csv" class="block w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-slate-800 file:text-slate-200 hover:file:bg-slate-700 cursor-pointer" />
+                <button onclick="procesarCSV()" class="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-500 text-white font-bold px-5 py-2 rounded-lg text-xs tracking-wider uppercase transition cursor-pointer">
+                    Cargar y Procesar
+                </button>
+            </div>
+        </section>
+
+        <section class="bg-slate-800/40 border border-slate-800 rounded-xl p-4 space-y-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+                <div>
+                    <label class="block text-[10px] font-bold text-slate-400 uppercase mb-1 tracking-wider">Atleta Seleccionado para Análisis</label>
+                    <select id="atletaSelector" onchange="cambiarAtleta()" class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-indigo-500 text-white font-medium">
+                        <option value="">Seleccione un atleta o cargue un CSV...</option>
+                    </select>
+                </div>
+                <div class="md:col-span-2 text-xs text-slate-400">
+                    <span class="font-bold text-fuchsia-400">Arquitectura de Trazado Verificada:</span> Al generar el informe, la Carga Interna se inyecta estrictamente como barras fucsia de fondo. Las líneas se renderizan encima por orden de prioridad táctil, garantizando lecturas impecables sin solapamiento de datos.
+                </div>
+            </div>
+
+            <div class="border-t border-slate-800/60 pt-3">
+                <span class="block text-[10px] font-bold text-slate-400 uppercase mb-2 tracking-wider">Variables a contrastar en Gráfica</span>
+                <div class="flex flex-wrap gap-4 text-xs">
+                    <label class="flex items-center gap-2 cursor-pointer bg-slate-950/40 border border-slate-800 px-3 py-1.5 rounded-lg hover:border-slate-700">
+                        <input type="checkbox" id="chkCargaInterna" checked class="accent-fuchsia-500">
+                        <span class="w-3 h-2 bg-fuchsia-500 rounded-sm inline-block"></span> <span class="font-medium text-fuchsia-400">Carga Interna (BARRAS)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer bg-slate-950/40 border border-slate-800 px-3 py-1.5 rounded-lg hover:border-slate-700">
+                        <input type="checkbox" id="chkRMSSD" checked class="accent-indigo-500">
+                        <span class="w-4 h-0.5 bg-indigo-500 inline-block"></span> <span class="font-medium text-slate-200">RMSSD (LÍNEA CONTINUA)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer bg-slate-950/40 border border-slate-800 px-3 py-1.5 rounded-lg hover:border-slate-700">
+                        <input type="checkbox" id="chkSDNN" checked class="accent-emerald-500">
+                        <span class="w-4 h-0.5 border-t border-dashed border-emerald-500 inline-block"></span> <span class="font-medium text-emerald-400">SDNN (PUNTEADA)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer bg-slate-950/40 border border-slate-800 px-3 py-1.5 rounded-lg hover:border-slate-700">
+                        <input type="checkbox" id="chkStress" class="accent-amber-500">
+                        <span class="w-4 h-0.5 border-t border-dashed border-amber-500 inline-block"></span> <span class="font-medium text-amber-400">Stress Score (PUNTEADA)</span>
+                    </label>
+                    <label class="flex items-center gap-2 cursor-pointer bg-slate-950/40 border border-slate-800 px-3 py-1.5 rounded-lg hover:border-slate-700">
+                        <input type="checkbox" id="chkRatio" class="accent-cyan-500">
+                        <span class="w-4 h-0.5 border-t border-dashed border-cyan-500 inline-block"></span> <span class="font-medium text-cyan-400">Ratio S:PS (PUNTEADA)</span>
+                    </label>
+                </div>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Último RMSSD Basal</p>
+                <h3 id="kpiRmssd" class="text-2xl font-mono font-bold text-white mt-1">- <span class="text-xs text-slate-500">ms</span></h3>
+            </div>
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Carga Interna Semanal Acumulada</p>
+                <h3 id="kpiCargaAcumulada" class="text-2xl font-mono font-bold text-fuchsia-400 mt-1">- <span class="text-xs text-slate-500">UA</span></h3>
+            </div>
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Stress Score Promedio</p>
+                <h3 id="kpiStress" class="text-2xl font-mono font-bold text-amber-400 mt-1">-</h3>
+            </div>
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-4">
+                <p class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Sexo Biológico Evaluado</p>
+                <h3 id="kpiSexo" class="text-xl font-sans font-bold text-indigo-400 mt-2 uppercase tracking-wide">-</h3>
+            </div>
+        </section>
+
+        <section class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-slate-800/40 border border-slate-800 rounded-xl p-5 shadow-xl flex flex-col min-h-[350px]">
+                <div class="flex items-center justify-between mb-3 border-b border-slate-800 pb-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-lg">📊</span>
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-slate-300">Historial de Laboratorio y Control de Cargas</h2>
+                    </div>
+                    <span id="contadorRegistros" class="text-xs bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-full font-mono text-indigo-400">0 Registros</span>
+                </div>
+
+                <div class="overflow-x-auto flex-1">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 text-[10px] uppercase font-bold text-slate-500 tracking-wider">
+                                <th class="py-2">Fecha</th>
+                                <th class="py-2 text-center">Duración</th>
+                                <th class="py-2 text-center">Borg</th>
+                                <th class="py-2 text-center text-fuchsia-400">Carga Int.</th>
+                                <th class="py-2 text-center">RMSSD</th>
+                                <th class="py-2 text-center">Stress Score</th>
+                                <th class="py-2 text-center">Ratio S:PS</th>
+                                <th class="py-2 text-right">RMSSD-Slope</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaCuerpo" class="divide-y divide-slate-800/30 text-xs font-mono">
+                            <tr id="filaVacia">
+                                <td colspan="8" class="text-center py-12 text-slate-500 font-sans italic">Cargue el archivo CSV modificado para iniciar el procesamiento.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="bg-slate-950 border border-slate-800 rounded-xl p-5 flex flex-col justify-between">
+                <div>
+                    <div class="flex items-center gap-2 border-b border-slate-800 pb-3 mb-4">
+                        <span class="text-md">🔬</span>
+                        <h3 class="text-xs font-bold uppercase text-slate-300 tracking-wider">Consola de Interpretación Médica</h3>
+                    </div>
+                    <div id="diagnosticoCuerpo" class="text-xs text-slate-400 leading-relaxed font-sans space-y-3">
+                        <p>Esperando la selección de un atleta para estructurar el diagnóstico autonómico basado en el balance de carga interna.</p>
+                    </div>
+                </div>
+                <div class="mt-6 pt-4 border-t border-slate-900 text-[10px] text-slate-500 font-mono">
+                    Clasificación basada en el modelo cinético de Naranjo Orellana (2015).
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <div style="position: absolute; left: -9999px; top: -9999px;">
+        <canvas id="hiddenCanvasChart" width="1000" height="380"></canvas>
+    </div>
+
+    <script>
+        let datosCompletos = [];
+        let atletasDetectados = new Set();
+        let atletaSeleccionado = "";
+
+        function limpiarCelda(texto) {
+            if (!texto) return "";
+            return texto.replace(/^["']|["']$/g, '').trim();
+        }
+
+        async function conectarPolarH10() {
+            try {
+                document.getElementById('btTexto').innerText = "Buscando banda...";
+                const dispositivo = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: ['heart_rate'] }]
+                });
+
+                document.getElementById('btTexto').innerText = "Estableciendo enlace...";
+                const servidorGATT = await dispositivo.gatt.connect();
+                const servicio = await servidorGATT.getPrimaryService('heart_rate');
+                const caracteristica = await servicio.getCharacteristic('heart_rate_measurement');
+                
+                await caracteristica.startNotifications();
+                caracteristica.addEventListener('characteristicvaluechanged', (e) => {
+                    const valor = e.target.value;
+                    let banderas = valor.getUint8(0);
+                    let ritmoCardiaco = ((banderas & 1) === 0) ? valor.getUint8(1) : valor.getUint16(1, true);
+                    document.getElementById('liveBPM').innerText = ritmoCardiaco;
+                });
+                
+                document.getElementById('btnBluetooth').classList.remove('bg-rose-600', 'hover:bg-rose-500');
+                document.getElementById('btnBluetooth').classList.add('bg-emerald-600', 'hover:bg-emerald-500');
+                document.getElementById('btIcono').innerText = "🔴";
+                document.getElementById('btTexto').innerText = "Polar H10 Conectado";
+                document.getElementById('panelLiveHR').classList.remove('hidden');
+
+            } catch (error) {
+                console.error(error);
+                document.getElementById('btTexto').innerText = "Conectar Banda Polar H10";
+                alert("❌ Error de conexión Bluetooth con la banda Polar.");
+            }
+        }
+
+        function procesarCSV() {
+            const fileInput = document.getElementById('csvFileInput');
+            if (fileInput.files.length === 0) {
+                alert("⚠️ Seleccione un archivo .csv válido.");
+                return;
+            }
+
+            const archivo = fileInput.files[0];
+            const lector = new FileReader();
+
+            lector.onload = function(e) {
+                const contenido = e.target.result;
+                const lineas = contenido.split(/\r?\n/);
+                
+                datosCompletos = [];
+                atletasDetectados.clear();
+
+                let ultimoAtletaValido = "";
+                let ultimoSexoValido = "MASCULINO";
+
+                for (let i = 1; i < lineas.length; i++) {
+                    if (!lineas[i].trim()) continue;
+                    
+                    const columnas = lineas[i].split(/,(?=(?:(?:[^"]*"){2})*[^"]*$)/);
+                    
+                    let nombreAtleta = columnas[0] ? limpiarCelda(columnas[0]).toUpperCase() : ultimoAtletaValido;
+                    if (nombreAtleta) ultimoAtletaValido = nombreAtleta;
+
+                    let sexoAtleta = columnas[3] ? limpiarCelda(columnas[3]).toUpperCase() : ultimoSexoValido;
+                    if (sexoAtleta) ultimoSexoValido = sexoAtleta;
+
+                    let fechaOriginal = columnas[4] ? limpiarCelda(columnas[4]) : "-";
+                    
+                    const duracionMinutos = parseFloat(columnas[5]) || 0;
+                    const valorBorg = parseFloat(columnas[6]) || 0;
+                    const cargaInternaCalculada = duracionMinutos * valorBorg;
+
+                    const rmssd = parseFloat(columnas[10]); 
+                    const sdnn = parseFloat(columnas[12]);   
+
+                    if (nombreAtleta && !isNaN(rmssd) && !isNaN(sdnn)) {
+                        atletasDetectados.add(nombreAtleta);
+                        
+                        const sd1 = Math.sqrt(Math.pow(rmssd, 2) / 2);
+                        const sd2 = Math.sqrt(2 * Math.pow(sdnn, 2) - Math.pow(sd1, 2));
+                        const stressScore = parseFloat((1000 / sd2).toFixed(2));
+                        const ratioS_PS = parseFloat((sd2 / sd1).toFixed(3));
+
+                        datosCompletos.push({
+                            atleta: nombreAtleta,
+                            meso: columnas[1] ? limpiarCelda(columnas[1]) : "-",  
+                            micro: columnas[2] ? limpiarCelda(columnas[2]) : "-", 
+                            fecha: fechaOriginal, 
+                            sexo: sexoAtleta,
+                            duracion: duracionMinutos,
+                            borg: valorBorg,
+                            cargaInterna: cargaInternaCalculada,
+                            rmssd: rmssd,
+                            sdnn: sdnn,
+                            stressScore: stressScore,
+                            ratioS_PS: ratioS_PS,
+                            slope: null
+                        });
+                    }
+                }
+
+                for (let i = 0; i < datosCompletos.length; i++) {
+                    let actual = datosCompletos[i];
+                    let anterior = datosCompletos.slice(0, i).reverse().find(d => d.atleta === actual.atleta);
+                    if (anterior) {
+                        actual.slope = parseFloat((actual.rmssd - anterior.rmssd).toFixed(2));
+                    }
+                }
+
+                actualizarSelectorAtletas();
+            };
+
+            lector.readAsText(archivo);
+        }
+
+        function actualizarSelectorAtletas() {
+            const selector = document.getElementById('atletaSelector');
+            selector.innerHTML = '<option value="">-- Seleccione un Deportista --</option>';
+            atletasDetectados.forEach(atleta => {
+                selector.innerHTML += `<option value="${atleta}">${atleta}</option>`;
+            });
+            if (atletasDetectados.size > 0) {
+                selector.selectedIndex = 1;
+                cambiarAtleta();
+            }
+        }
+
+        function cambiarAtleta() {
+            atletaSeleccionado = document.getElementById('atletaSelector').value;
+            if (!atletaSeleccionado) return;
+
+            const registrosFiltrados = datosCompletos.filter(d => d.atleta === atletaSeleccionado);
+            const tbody = document.getElementById('tablaCuerpo');
+            document.getElementById('contadorRegistros').innerText = `${registrosFiltrados.length} Registros`;
+            tbody.innerHTML = "";
+
+            let sumaStress = 0;
+            let maxRatio = 0;
+            let cargaAcumuladaSemanal = 0;
+
+            registrosFiltrados.forEach(r => {
+                sumaStress += r.stressScore;
+                cargaAcumuladaSemanal += r.cargaInterna;
+                if (r.ratioS_PS > maxRatio) maxRatio = r.ratioS_PS;
+
+                const slopeText = r.slope === null ? '-' : (r.slope >= 0 ? `+${r.slope}` : `${r.slope}`);
+                const slopeColor = r.slope !== null && r.slope < 0 ? 'text-rose-400 font-bold' : (r.slope > 0 ? 'text-emerald-400' : 'text-slate-500');
+
+                tbody.innerHTML += `
+                    <tr class="border-b border-slate-800/40 hover:bg-slate-800/20 transition">
+                        <td class="py-3 font-sans text-slate-300">${r.fecha}</td>
+                        <td class="py-3 text-center text-slate-400">${r.duracion} min</td>
+                        <td class="py-3 text-center text-slate-400">${r.borg}/10</td>
+                        <td class="py-3 text-center font-bold text-fuchsia-400">${r.cargaInterna} UA</td>
+                        <td class="py-3 text-center font-bold text-white">${r.rmssd}</td>
+                        <td class="py-3 text-center text-amber-400">${r.stressScore}</td>
+                        <td class="py-3 text-center text-cyan-400">${r.ratioS_PS}</td>
+                        <td class="py-3 text-right ${slopeColor}">${slopeText} ms</td>
+                    </tr>
+                `;
+            });
+
+            const ultimo = registrosFiltrados[registrosFiltrados.length - 1];
+            document.getElementById('kpiRmssd').innerHTML = `${ultimo.rmssd} <span class="text-xs text-slate-500">ms</span>`;
+            document.getElementById('kpiCargaAcumulada').innerHTML = `${cargaAcumuladaSemanal} <span class="text-xs text-slate-500">UA</span>`;
+            document.getElementById('kpiStress').innerText = (sumaStress / registrosFiltrados.length).toFixed(1);
+            document.getElementById('kpiSexo').innerText = ultimo.sexo;
+            
+            const consola = document.getElementById('diagnosticoCuerpo');
+            if (ultimo.slope !== null && ultimo.slope < -15) {
+                consola.innerHTML = `
+                    <p class="text-rose-400 font-bold uppercase text-[11px] tracking-wide">⚠️ Sobrecarga / Respuesta Simpática Elevada</p>
+                    <p>La acumulación de carga interna ha deprimido la actividad parasimpática (RMSSD-Slope: ${ultimo.slope} ms). Se aconseja regular las cargas físicas inmediatamente.</p>
+                `;
+            } else {
+                consola.innerHTML = `
+                    <p class="text-emerald-400 font-bold uppercase text-[11px] tracking-wide">✅ Adaptación Funcional Óptima</p>
+                    <p>El deportista asimila correctamente el volumen de carga actual, manteniendo los valores de RMSSD estables.</p>
+                `;
+            }
+        }
+
+        function generarInformePDF() {
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF('p', 'mm', 'a4');
+
+            if (!atletaSeleccionado) {
+                alert("⚠️ Seleccione un atleta activo.");
+                return;
+            }
+
+            // ARQUITECTURA DE TRIPLE CONTRASTE DEFINITIVA
+            const configVariables = [
+                { id: 'chkCargaInterna', prop: 'cargaInterna', nombre: 'Carga Interna (UA)', color: '#d946ef', colorFondo: 'rgba(217, 70, 239, 0.95)', type: 'bar', axis: 'y', dash: [], order: 3 },
+                { id: 'chkRMSSD', prop: 'rmssd', nombre: 'RMSSD (ms) [Línea Sólida]', color: '#4f46e5', colorFondo: 'transparent', type: 'line', axis: 'y1', dash: [], order: 1 },
+                { id: 'chkSDNN', prop: 'sdnn', nombre: 'SDNN (ms) [Punteada]', color: '#10b981', colorFondo: 'transparent', type: 'line', axis: 'y1', dash: [6, 4], order: 2 },
+                { id: 'chkStress', prop: 'stressScore', nombre: 'Stress Score [Punteada]', color: '#f59e0b', colorFondo: 'transparent', type: 'line', axis: 'y1', dash: [5, 4], order: 2 },
+                { id: 'chkRatio', prop: 'ratioS_PS', nombre: 'Ratio S:PS [Punteada]', color: '#06b6d4', colorFondo: 'transparent', type: 'line', axis: 'y1', dash: [2, 3], order: 2 }
+            ];
+
+            const seleccionadas = configVariables.filter(v => document.getElementById(v.id).checked);
+            if (seleccionadas.length === 0) {
+                alert("⚠️ Seleccione al menos una variable para graficar.");
+                return;
+            }
+
+            const registros = datosCompletos.filter(d => d.atleta === atletaSeleccionado);
+            const etiquetasFechas = registros.map(r => r.fecha); 
+            const ultimo = registros[registros.length - 1];
+
+            const datasetsProcesados = seleccionadas.map((v) => {
+                const esLinea = v.type === 'line';
+                return {
+                    type: v.type,
+                    label: v.nombre,
+                    data: registros.map(r => r[v.prop]),
+                    borderColor: v.color,
+                    backgroundColor: v.colorFondo,
+                    borderWidth: esLinea ? 4.0 : 1.0,     // Líneas muy gruesas, barras delgadas de contorno
+                    borderDash: v.dash,                  // Inyección de segmentación
+                    yAxisID: v.axis,
+                    tension: 0.12,
+                    pointRadius: esLinea ? 6 : 0,        // Destacar los puntos de cruce en las líneas
+                    pointBackgroundColor: v.color,
+                    order: v.order                       // Control de Capas absoluto: Líneas sobre Barras
+                };
+            });
+
+            const ctx = document.getElementById('hiddenCanvasChart').getContext('2d');
+            if (window.miGraficoInforme) { window.miGraficoInforme.destroy(); }
+
+            window.miGraficoInforme = new Chart(ctx, {
+                data: { labels: etiquetasFechas, datasets: datasetsProcesados },
+                options: {
+                    responsive: false,
+                    animation: false,
+                    scales: {
+                        x: { 
+                            display: true, 
+                            grid: { display: false }, 
+                            ticks: { font: { size: 10, weight: 'bold' }, color: '#1e293b' } 
+                        },
+                        y: { 
+                            type: 'linear', 
+                            display: document.getElementById('chkCargaInterna').checked, 
+                            position: 'left', 
+                            title: { display: true, text: 'Carga Interna (UA)', color: '#d946ef', font: { weight: 'bold', size: 11 } },
+                            ticks: { color: '#1e293b' }
+                        },
+                        y1: { 
+                            type: 'linear', 
+                            display: true, 
+                            position: 'right', 
+                            grid: { drawOnChartArea: false }, 
+                            title: { display: true, text: 'Variables Biológicas (HRV)', color: '#4f46e5', font: { weight: 'bold', size: 11 } },
+                            ticks: { color: '#1e293b' }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: { font: { size: 9, weight: 'bold' }, boxWidth: 15 }
+                        }
+                    }
+                }
+            });
+
+            setTimeout(() => {
+                const imgGraficoBase64 = window.miGraficoInforme.toBase64Image();
+
+                // ARMADO INFORME CLÍNICO EN PDF
+                doc.setFont("helvetica", "bold");
+                doc.setFontSize(14);
+                doc.text("INFORME INTEGRADO DE CONTROL AUTONÓMICO Y CARGA INTERNA", 15, 18);
+                
+                doc.setFontSize(8.5);
+                doc.setFont("helvetica", "normal");
+                doc.text("RUN-STATS Tracker v13.0 — Sistema Avanzado de Triple Contraste Estructurado", 15, 23);
+                
+                doc.setDrawColor(15, 23, 42);
+                doc.line(15, 26, 195, 26);
+
+                // Identificación
+                doc.setFontSize(9.5);
+                doc.setFont("helvetica", "bold");
+                doc.text("1. IDENTIFICACIÓN DEL DEPORTISTA", 15, 34);
+                doc.setFont("helvetica", "normal");
+                doc.setFontSize(9);
+                doc.text(`• Atleta Evaluado:   ${ultimo.atleta}`, 18, 40);
+                doc.text(`• Sexo Biológico:    ${ultimo.sexo}`, 18, 46);
+                doc.text(`• Estructura Técnica: Meso ${ultimo.meso} / Micro ${ultimo.micro}`, 18, 52);
+
+                // Cuadro Resumen
+                doc.setFont("helvetica", "bold");
+                doc.text("2. INTEGRACIÓN DE CARGA INTERNA Y RESPUESTA VEGETAL", 15, 64);
+                doc.setFillColor(248, 250, 252);
+                doc.rect(15, 68, 180, 20, 'F');
+                doc.setFont("helvetica", "normal");
+                let totalCarga = registros.reduce((acc, current) => acc + current.cargaInterna, 0);
+                doc.text(`• Carga Semanal Total: ${totalCarga} UA     • Último RMSSD: ${ultimo.rmssd} ms     • Stress Score Promedio: ${ultimo.stressScore}`, 20, 74);
+                doc.text(`• Última sesión registrada: Duración de ${ultimo.duracion} minutos con un Borg RPE de ${ultimo.borg}/10.`, 20, 80);
+
+                // Panel Gráfico de Producción
+                doc.setFont("helvetica", "bold");
+                doc.text("3. PANEL GRÁFICO CORRELATIVO TRIPLE (BARRAS, CONTINUAS Y PUNTEADAS)", 15, 96);
+                doc.addImage(imgGraficoBase64, 'PNG', 15, 100, 180, 72);
+
+                // Clínico
+                doc.text("4. DIAGNÓSTICO INTEGRADO BASADO EN EL MODELO DE NARANJO ORELLANA", 15, 182);
+                doc.setFillColor(241, 245, 249);
+                doc.rect(15, 186, 180, 24, 'F');
+                doc.setFont("helvetica", "italic");
+                
+                let diagnosticoTxt = "";
+                if (ultimo.slope !== null && ultimo.slope < -15) {
+                    diagnosticoTxt = `ALERTA DE FATIGA: La carga interna acumulada (${totalCarga} UA) superó el umbral adaptativo del deportista, provocando una caída drástica en la pendiente autonómica vagal (RMSSD-Slope: ${ultimo.slope} ms). El índice de estrés indica una respuesta predominante del sistema simpático.`;
+                } else {
+                    diagnosticoTxt = `ADAPTACIÓN SATISFACTORIA: El volumen e intensidad aplicados que suman ${totalCarga} UA de carga interna demuestran una asimilación biológica perfecta. El tono vagal se recupera eficazmente en los registros matutinos basales.`;
+                }
+                
+                let lineasDiag = doc.splitTextToSize(diagnosticoTxt, 172);
+                doc.text(lineasDiag, 18, 192);
+
+                // Metodológicas
+                doc.setFont("helvetica", "bold");
+                doc.text("5. DIRECTRICES METODOLÓGICAS DE RECUPERACIÓN Y AJUSTE DE CARGA", 15, 218);
+                doc.setFont("helvetica", "normal");
+                let accionesTxt = ultimo.slope < -15 
+                    ? "• Reducir la carga interna planificada para las próximas 48 horas en un 35%.\n• Priorizar descanso total o regenerativo con RPE menor a 3/10.\n• Monitorear la respuesta de la frecuencia cardíaca en reposo al despertar."
+                    : "• Mantener la progresión planificada en el microciclo de entrenamiento.\n• Continuar con el registro habitual usando la banda Polar H10 en condiciones basales.";
+                
+                let lineasAcciones = doc.splitTextToSize(accionesTxt, 174);
+                doc.text(lineasAcciones, 15, 224);
+
+                // Firmas
+                doc.line(25, 262, 85, 262);
+                doc.text("Dirección de Ciencias del Deporte", 29, 267);
+                doc.line(125, 262, 185, 262);
+                doc.text("Control de Carga Fisiológica", 134, 267);
+
+                doc.save(`Reporte_HRV_Contraste_Triple_${ultimo.atleta}.pdf`);
+            }, 200);
+        }
+    </script>
+<script src="https://cdn.tailwindcss.com"></script>
+</body>
+</html>

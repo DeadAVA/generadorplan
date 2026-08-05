@@ -17,7 +17,7 @@ ALLOWED_HOSTS = [
     host.strip()
     for host in os.getenv(
         "ALLOWED_HOSTS",
-        f"{PUBLIC_HOST},localhost,127.0.0.1,testserver,app",
+        "*",
     ).split(",")
     if host.strip()
 ]

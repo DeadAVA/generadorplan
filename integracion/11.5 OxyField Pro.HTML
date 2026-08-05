@@ -1,0 +1,1075 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OXYFIELD PRO - Fisiología e Integración Real</title>
+    <!-- Librería Chart.js para renderizar los gráficos de telemetría -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg-main: #f4f6f9;
+            --bg-header: #051423;
+            --bg-card: #ffffff;
+            --primary-blue: #1a73e8;
+            --btn-green: #0fc187;
+            --btn-orange: #f5a623;
+            --btn-gray: #4e5d6c;
+            --btn-danger: #ef4444;
+            --text-dark: #1e293b;
+            --border-color: #e2e8f0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-main);
+            margin: 0;
+            padding: 0;
+            color: var(--text-dark);
+        }
+
+        header {
+            background-color: var(--bg-header);
+            color: white;
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo-block h1 { margin: 0; font-size: 26px; font-weight: 800; }
+        .logo-block p { margin: 3px 0 0 0; font-size: 13px; color: #94a3b8; }
+        
+        .telemetry-widgets { display: flex; gap: 15px; }
+        .widget-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 8px 16px;
+            border-radius: 6px;
+            text-align: center;
+            min-width: 140px;
+        }
+        .widget-box .lbl { font-size: 10px; color: #94a3b8; text-transform: uppercase; font-weight: bold; }
+        .widget-box .val { font-size: 20px; font-weight: bold; margin-top: 4px; }
+        
+        .badge-enlazar { 
+            display: inline-block; background: #e2e8f0; color: #475569; 
+            font-size: 11px; padding: 4px 8px; border-radius: 4px; font-weight: bold; 
+            cursor: pointer; transition: 0.2s; border: 1px solid #cbd5e1; margin-top: 4px;
+        }
+        .badge-enlazar:hover { background: #cbd5e1; }
+        
+        .badge-buscando { 
+            display: inline-block; background: var(--btn-orange); color: white; 
+            font-size: 11px; padding: 4px 8px; border-radius: 4px; font-weight: bold; 
+            cursor: wait; margin-top: 4px;
+        }
+        
+        .badge-conectado { 
+            display: inline-block; background: #dcfce7; color: #166534; 
+            font-size: 11px; padding: 4px 8px; border-radius: 4px; font-weight: bold; 
+            cursor: pointer; border: 1px solid #bbf7d0; margin-top: 4px;
+            transition: 0.2s;
+        }
+        .badge-conectado:hover { background: #bbf7d0; }
+
+        .main-layout {
+            display: flex;
+            padding: 20px;
+            gap: 20px;
+            max-width: 1700px;
+            margin: 0 auto;
+            box-sizing: border-box;
+        }
+        .sidebar-left { flex: 0 0 440px; display: flex; flex-direction: column; gap: 20px; }
+        .dashboard-right { flex: 1; display: flex; flex-direction: column; gap: 20px; }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.03);
+            padding: 20px;
+            border: 1px solid var(--border-color);
+        }
+        .card-header-title {
+            font-size: 14px;
+            font-weight: bold;
+            text-transform: uppercase;
+            color: #0f172a;
+            border-bottom: 1px solid #f1f5f9;
+            padding-bottom: 10px;
+            margin-top: 0;
+            margin-bottom: 15px;
+        }
+
+        .global-timer {
+            font-size: 46px;
+            font-weight: 700;
+            text-align: center;
+            margin: 10px 0;
+            font-family: monospace;
+        }
+        .control-actions { display: flex; gap: 10px; margin-bottom: 20px; }
+        .control-actions button {
+            flex: 1; padding: 12px; border: none; border-radius: 6px;
+            color: white; font-size: 15px; font-weight: bold; cursor: pointer;
+        }
+        .btn-start { background-color: var(--btn-green); }
+        .btn-pause { background-color: var(--btn-orange); }
+        .btn-reset { background-color: var(--btn-gray); }
+
+        .field-block { margin-bottom: 15px; }
+        .field-block label { display: block; font-size: 12px; font-weight: bold; margin-bottom: 6px; color: var(--primary-blue); }
+        .field-block select, .field-block input {
+            width: 100%; padding: 10px; border: 1px solid #cbd5e1; border-radius: 6px; box-sizing: border-box; font-size: 14px;
+        }
+        
+        .protocol-control-row { display: flex; gap: 6px; }
+        .btn-icon-action {
+            padding: 0 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; color: white; font-size: 14px;
+        }
+
+        .input-row { display: flex; gap: 8px; }
+        .btn-submit-group {
+            width: 100%; padding: 12px; background-color: var(--btn-green); color: white;
+            border: none; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer; margin-bottom: 15px;
+        }
+
+        .table-scroll { max-height: 350px; overflow-y: auto; border: 1px solid var(--border-color); border-radius: 6px; }
+        table { width: 100%; border-collapse: collapse; text-align: left; font-size: 13px; }
+        th { background: #f8fafc; padding: 10px; font-weight: bold; border-bottom: 2px solid var(--border-color); color: #475569; }
+        td { padding: 10px; border-bottom: 1px solid var(--border-color); }
+        tr:nth-child(even) { background: #f8fafc; }
+        
+        .fila-reposo-estilo { background-color: #f8fafc; font-style: italic; color: #475569; }
+        .fila-completada { background-color: #f0fdf4 !important; font-weight: bold; }
+
+        .atleta-item-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px; border-bottom: 1px solid var(--border-color); font-size: 13px;
+        }
+        .atleta-info-block { display: flex; flex-direction: column; gap: 2px; }
+        .atleta-actions button {
+            border: none; padding: 6px 8px; border-radius: 4px; cursor: pointer; margin-left: 4px; color: white; font-size: 12px;
+        }
+        .btn-edit { background-color: var(--btn-orange); }
+        .btn-del { background-color: var(--btn-danger); }
+
+        .chart-container { position: relative; width: 100%; height: 280px; }
+
+        /* Estilo para el área de interpretación personalizable del evaluador */
+        .notas-evaluador {
+            width: 100%;
+            box-sizing: border-box;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            padding: 8px;
+            font-family: inherit;
+            font-size: 12.5px;
+            color: #334155;
+            background-color: #ffffff;
+            resize: vertical;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .notas-evaluador:focus {
+            border-color: var(--primary-blue);
+            box-shadow: 0 0 0 2px rgba(26, 115, 232, 0.1);
+        }
+
+        /* ==========================================================================
+           REGLAS DE IMPRESIÓN (REPORTE LIMPIO Y NOTAS FORMATEADAS)
+           ========================================================================== */
+        @media print {
+            body { background: white; color: black; font-size: 12px; }
+            header, .sidebar-left, .control-actions, .field-block, .btn-submit-group, .atleta-actions, .badge-enlazar, .badge-conectado, .badge-buscando {
+                display: none !important;
+            }
+            .main-layout { display: block; padding: 0; width: 100%; }
+            .dashboard-right { display: flex; flex-direction: column; width: 100%; gap: 20px; }
+            .card { border: 1px solid #cbd5e1; box-shadow: none; padding: 15px; page-break-inside: avoid; }
+            .table-scroll { max-height: none; overflow: visible; }
+            .chart-container { height: 320px; page-break-inside: avoid; }
+
+            /* OCULTA TODAS LAS FILAS NO COMPLETADAS EN EL REPORTE */
+            tbody tr:not(.fila-completada) {
+                display: none !important;
+            }
+
+            /* FORMATO DE TEXTO PLANO PARA EL ÁREA EDITABLE AL IMPRIMIR */
+            .notas-evaluador {
+                border: none !important;
+                background: transparent !important;
+                resize: none !important;
+                outline: none !important;
+                padding: 0 !important;
+                box-shadow: none !important;
+                font-size: 12.5px !important;
+                color: #1e293b !important;
+                height: auto !important;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="logo-block">
+        <h1>OXYFIELD PRO</h1>
+        <p>Fisiología e Integración Biomecánica de Campo</p>
+    </div>
+    <div class="telemetry-widgets">
+        <div class="widget-box">
+            <div class="lbl">Moxi NIRS</div>
+            <div id="head-smo2" class="val">SmO₂: --%</div>
+        </div>
+    </div>
+</header>
+
+<div class="main-layout">
+    <!-- PANEL IZQUIERDO DE CONTROL -->
+    <div class="sidebar-left">
+        <div class="card">
+            <div class="card-header-title">📋 Panel de Control de Test</div>
+            <div id="main-cronometro" class="global-timer">00:00.00</div>
+            
+            <div class="control-actions">
+                <button class="btn-start" onclick="iniciarTest()">Iniciar</button>
+                <button class="btn-pause" onclick="pausarTest()">Pausar</button>
+                <button class="btn-reset" onclick="reiniciarTest()">Reiniciar</button>
+            </div>
+
+            <div class="field-block">
+                <label>1. PROTOCOLO Y ATLETA</label>
+                <div class="protocol-control-row">
+                    <select id="protocolo-selector" onchange="cambiarProtocolo()" style="flex: 1;"></select>
+                    <button class="btn-icon-action" style="background: var(--btn-green);" onclick="agregarNuevoProtocolo()" title="Agregar Protocolo">+</button>
+                    <button class="btn-icon-action" style="background: var(--btn-orange);" onclick="editarProtocoloActual()" title="Editar Nombre">✏️</button>
+                    <button class="btn-icon-action" style="background: var(--btn-danger);" onclick="eliminarProtocoloActual()" title="Eliminar Protocolo">🗑️</button>
+                </div>
+            </div>
+
+            <div class="field-block">
+                <label>2. REGISTRO DE ATLETAS Y VINCULACIÓN INDIVIDUAL H10</label>
+                <div class="input-row">
+                    <input type="text" id="atleta-id" style="width: 20%;" value="01" placeholder="ID">
+                    <input type="text" id="atleta-nombre" style="width: 60%;" placeholder="Nombre del Atleta">
+                    <input type="text" id="atleta-edad" style="width: 20%;" value="53" placeholder="Edad">
+                </div>
+            </div>
+
+            <button class="btn-submit-group" onclick="agregarAtleta()">+ Insertar Atleta al Grupo</button>
+
+            <div>
+                <label style="font-size: 11px; font-weight: bold; color: var(--primary-blue);">LISTA DE CONTROL DE ATLETAS ACTIVOS</label>
+                <div id="lista-atletas-registro" style="border: 1px solid var(--border-color); border-radius: 6px; margin-top: 5px; max-height: 250px; overflow-y: auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- PANEL DERECHO DE VISUALIZACIÓN DE RESULTADOS -->
+    <div class="dashboard-right">
+        <div class="card">
+            <div id="titulo-tabla" class="card-header-title">🧬 TELEMETRÍA INTEGRADA DE PISTA ESCANEADA</div>
+            <div class="table-scroll">
+                <table>
+                    <thead id="encabezado-tabla"></thead>
+                    <tbody id="cuerpo-tabla"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header-title">📊 Comportamiento de FC Dinámica vs Carga de Velocidad</div>
+            <div class="chart-container">
+                <canvas id="canvasGrafico"></canvas>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header-title">📄 Reporte Clínico e Interpretación Fisiológica</div>
+            <div id="cuerpo-interpretacion" style="background: #f8fafc; padding: 15px; border-radius: 6px; border: 1px dashed #cbd5e1; font-size: 13px; line-height: 1.5;">
+                <p style="text-align: center; color: #64748b; font-style: italic; margin: 0;">
+                    El análisis fisiológico y reporte de rendimiento se autogenerará dinámicamente conforme se registren lecturas de esfuerzo.
+                </p>
+            </div>
+            <button class="btn-submit-group" style="background-color: var(--primary-blue); margin-top: 15px; margin-bottom: 0;" onclick="imprimirReporte()">
+                🖨️ Imprimir Reporte de Campo Clínico
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- LÓGICA GENERAL Y MOTOR FISIOLÓGICO ---
+    let listaAtletas = [
+        { id: "01", nombre: "ANDRES VILLALOBOS", edad: 53, color: "#1a73e8", fcActual: 0, estadoEnlace: "desconectado", notasPersonalizadas: null }
+    ];
+
+    let listaProtocolos = [
+        { id: "navette", nombre: "Test de Course Navette (20m - 21 Niveles)", estadios: 21 },
+        { id: "conconi", nombre: "Test de Conconi (Umbral de Deflexión)", estadios: 6 },
+        { id: "cooper", nombre: "Test de Cooper (Resistencia - 12 Minutos)", estadios: 12 },
+        { id: "george_fisher", nombre: "Test de George-Fisher (Caminata 1 Milla / 1.6 km)", estadios: 15 }
+    ];
+
+    let dispositivosBluetoothActivos = {}; 
+
+    let appActiva = false;
+    let tiempoMs = 0;
+    let protocoloActualId = "navette"; 
+    
+    let intervaloGlobal = null;
+    let monitorFisiologico = null;
+    let timeoutEstadio = null;
+    let chartInstancia = null;
+
+    let motor = { estadioActual: 1, subPeriodo: 1, velocidad: 8.5, totalEstadios: 21 };
+
+    // Tabla de parámetros oficiales Course Navette (21 niveles)
+    const tramosNavette = [
+        { n: 1,  v: 7,  vel: 8.5 },  { n: 2,  v: 8,  vel: 9.0 },  { n: 3,  v: 8,  vel: 9.5 },
+        { n: 4,  v: 9,  vel: 10.0 }, { n: 5,  v: 9,  vel: 10.5 }, { n: 6,  v: 10, vel: 11.0 },
+        { n: 7,  v: 10, vel: 11.5 }, { n: 8,  v: 11, vel: 12.0 }, { n: 9,  v: 11, vel: 12.5 },
+        { n: 10, v: 12, vel: 13.0 }, { n: 11, v: 12, vel: 13.5 }, { n: 12, v: 13, vel: 14.0 },
+        { n: 13, v: 13, vel: 14.5 }, { n: 14, v: 14, vel: 15.0 }, { n: 15, v: 14, vel: 15.5 },
+        { n: 16, v: 15, vel: 16.0 }, { n: 17, v: 15, vel: 16.5 }, { n: 18, v: 16, vel: 17.0 },
+        { n: 19, v: 16, vel: 17.5 }, { n: 20, v: 17, vel: 18.0 }, { n: 21, v: 17, vel: 18.5 }
+    ];
+
+    window.onload = () => {
+        renderizarSelectorProtocolos();
+        actualizarInterfazAtletas();
+        preconstruirEstructuraTabla();
+        inicializarGraficoBasico();
+        arrancarMonitorFisiologicoGlobal(); 
+    };
+
+    function renderizarSelectorProtocolos() {
+        const selector = document.getElementById('protocolo-selector');
+        selector.innerHTML = "";
+        listaProtocolos.forEach(p => {
+            const opt = document.createElement('option');
+            opt.value = p.id;
+            opt.textContent = p.nombre;
+            if (p.id === protocoloActualId) opt.selected = true;
+            selector.appendChild(opt);
+        });
+    }
+
+    function agregarNuevoProtocolo() {
+        const nombre = prompt("Introduce el nombre del nuevo protocolo:");
+        if (!nombre || !nombre.trim()) return;
+
+        const estadiosStr = prompt("Número de etapas o minutos para la prueba:", "10");
+        const estadios = parseInt(estadiosStr) || 10;
+
+        const nuevoId = "custom_" + Date.now();
+        listaProtocolos.push({ id: nuevoId, nombre: nombre.trim(), estadios: estadios });
+        
+        protocoloActualId = nuevoId;
+        renderizarSelectorProtocolos();
+        reiniciarTest();
+        alert(`Protocolo "${nombre}" creado correctamente.`);
+    }
+
+    function editarProtocoloActual() {
+        const prot = listaProtocolos.find(p => p.id === protocoloActualId);
+        if (!prot) return;
+
+        const nuevoNombre = prompt("Editar nombre del protocolo:", prot.nombre);
+        if (nuevoNombre && nuevoNombre.trim()) {
+            prot.nombre = nuevoNombre.trim();
+            renderizarSelectorProtocolos();
+            preconstruirEstructuraTabla();
+        }
+    }
+
+    function eliminarProtocoloActual() {
+        if (listaProtocolos.length <= 1) {
+            return alert("Debe existir al menos un protocolo activo.");
+        }
+
+        const prot = listaProtocolos.find(p => p.id === protocoloActualId);
+        if (confirm(`¿Eliminar el protocolo "${prot.nombre}"?`)) {
+            listaProtocolos = listaProtocolos.filter(p => p.id !== protocoloActualId);
+            protocoloActualId = listaProtocolos[0].id;
+            renderizarSelectorProtocolos();
+            reiniciarTest();
+        }
+    }
+
+    function cambiarProtocolo() {
+        protocoloActualId = document.getElementById('protocolo-selector').value;
+        reiniciarTest();
+    }
+
+    function formatearTiempoTeorico(segundosTotales) {
+        let mins = Math.floor(segundosTotales / 60);
+        let segs = Math.floor(segundosTotales % 60);
+        return (mins < 10 ? "0" + mins : mins) + ":" + (segs < 10 ? "0" + segs : segs);
+    }
+
+    function generarSenalAudio(frecuencia, duracion) {
+        try {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            const ctxAudio = new AudioContext();
+            const oscilador = ctxAudio.createOscillator();
+            const controlGanancia = ctxAudio.createGain();
+            
+            oscilador.type = 'sine';
+            oscilador.frequency.value = frecuencia; 
+            controlGanancia.gain.setValueAtTime(0.15, ctxAudio.currentTime);
+            
+            oscilador.connect(controlGanancia);
+            controlGanancia.connect(ctxAudio.destination);
+            
+            oscilador.start();
+            oscilador.stop(ctxAudio.currentTime + duracion);
+        } catch (e) {
+            console.log("Audio no soportado en el navegador actual.");
+        }
+    }
+
+    // --- CONEXIÓN BLUETOOTH CON SENSORES DE FRECUENCIA CARDÍACA ---
+    async function gestionarEnlacePolar(id) {
+        const atleta = listaAtletas.find(a => a.id === id);
+        if (!atleta) return;
+
+        if (atleta.estadoEnlace === "desconectado") {
+            try {
+                atleta.estadoEnlace = "buscando";
+                actualizarInterfazAtletas();
+
+                const dispositivo = await navigator.bluetooth.requestDevice({
+                    filters: [{ services: ['heart_rate'] }]
+                });
+
+                dispositivo.addEventListener('gattserverdisconnected', () => {
+                    atleta.estadoEnlace = "desconectado";
+                    atleta.fcActual = 0;
+                    delete dispositivosBluetoothActivos[id];
+                    actualizarInterfazAtletas();
+                    alert(`El sensor de ${atleta.nombre} se desconectó.`);
+                });
+
+                const servidor = await dispositivo.gatt.connect();
+                const servicio = await servidor.getPrimaryService('heart_rate');
+                const caracteristica = await servicio.getCharacteristic('heart_rate_measurement');
+
+                await caracteristica.startNotifications();
+
+                caracteristica.addEventListener('characteristicvaluechanged', (event) => {
+                    const dataView = event.target.value;
+                    const banderas = dataView.getUint8(0);
+                    let fcDecodificada = 0;
+
+                    if ((banderas & 0x01) === 0) {
+                        fcDecodificada = dataView.getUint8(1);
+                    } else {
+                        fcDecodificada = dataView.getUint16(1, true);
+                    }
+
+                    atleta.fcActual = fcDecodificada;
+                    const subNodo = document.getElementById(`live-fc-${atleta.id}`);
+                    if (subNodo) subNodo.textContent = fcDecodificada;
+                });
+
+                atleta.estadoEnlace = "conectado";
+                dispositivosBluetoothActivos[id] = dispositivo;
+                actualizarInterfazAtletas();
+
+            } catch (error) {
+                console.error("Error Bluetooth:", error);
+                atleta.estadoEnlace = "desconectado";
+                actualizarInterfazAtletas();
+                alert("Conexión cancelada o dispositivo no sincronizado.");
+            }
+
+        } else if (atleta.estadoEnlace === "conectado") {
+            if (confirm(`¿Desconectar el sensor de ${atleta.nombre}?`)) {
+                if (dispositivosBluetoothActivos[id]) {
+                    dispositivosBluetoothActivos[id].gatt.disconnect();
+                }
+            }
+        }
+    }
+
+    function actualizarInterfazAtletas() {
+        const contenedor = document.getElementById('lista-atletas-registro');
+        contenedor.innerHTML = "";
+        
+        listaAtletas.forEach(atleta => {
+            const div = document.createElement('div');
+            div.className = "atleta-item-row";
+            
+            let badgeTelemetria = "";
+            if (atleta.estadoEnlace === "desconectado") {
+                badgeTelemetria = `<span class="badge-enlazar" onclick="gestionarEnlacePolar('${atleta.id}')">🔗 Enlazar H10</span>`;
+            } else if (atleta.estadoEnlace === "buscando") {
+                badgeTelemetria = `<span class="badge-buscando">⏳ Buscando...</span>`;
+            } else if (atleta.estadoEnlace === "conectado") {
+                badgeTelemetria = `<span class="badge-conectado" onclick="gestionarEnlacePolar('${atleta.id}')">❤️ <span id="live-fc-${atleta.id}">${atleta.fcActual}</span> lpm</span>`;
+            }
+
+            div.innerHTML = `
+                <div class="atleta-info-block">
+                    <div><strong>ID ${atleta.id}</strong> - ${atleta.nombre} (${atleta.edad} años)</div>
+                    <div>${badgeTelemetria}</div>
+                </div>
+                <div class="atleta-actions">
+                    <button class="btn-edit" onclick="editarAtleta('${atleta.id}')">✏️</button>
+                    <button class="btn-del" onclick="eliminarAtleta('${atleta.id}')">🗑️</button>
+                </div>
+            `;
+            contenedor.appendChild(div);
+        });
+    }
+
+    function arrancarMonitorFisiologicoGlobal() {
+        if (monitorFisiologico) clearInterval(monitorFisiologico);
+        
+        monitorFisiologico = setInterval(() => {
+            listaAtletas.forEach(atleta => {
+                if (atleta.estadoEnlace === "conectado") {
+                    const subNodo = document.getElementById(`live-fc-${atleta.id}`);
+                    if (subNodo) subNodo.textContent = atleta.fcActual;
+                }
+            });
+
+            if (appActiva) {
+                document.getElementById('head-smo2').textContent = `SmO₂: ${Math.max(35, 75 - (motor.estadioActual * 2))}%`;
+            }
+        }, 1000);
+    }
+
+    // --- GENERACIÓN DE LA ESTRUCTURA DE LA TABLA ---
+    function preconstruirEstructuraTabla() {
+        const thHead = document.getElementById('encabezado-tabla');
+        const tbody = document.getElementById('cuerpo-tabla');
+        const titulo = document.getElementById('titulo-tabla');
+        
+        tbody.innerHTML = "";
+        let tiempoAcumuladoSegundos = 0;
+        const protConfig = listaProtocolos.find(p => p.id === protocoloActualId);
+        
+        if (protocoloActualId === "conconi") {
+            titulo.textContent = "📋 TELEMETRÍA - TEST DE CONCONI";
+            thHead.innerHTML = `<tr><th>Estadio</th><th>ID Atleta</th><th>Distancia</th><th>Velocidad (km/h)</th><th>FC (lpm)</th><th>Tiempo Acum.</th></tr>`;
+            motor.totalEstadios = 6;
+            
+            listaAtletas.forEach(atleta => {
+                const tr = document.createElement('tr');
+                tr.id = `celda-conconi-0-${atleta.id}`;
+                tr.className = "fila-reposo-estilo";
+                tr.innerHTML = `<td>0 (Basal)</td><td><strong>${atleta.id}</strong></td><td>0m</td><td>0.0</td><td class="col-fc">---</td><td class="col-t">00:00</td>`;
+                tbody.appendChild(tr);
+            });
+
+            for(let e = 1; e <= motor.totalEstadios; e++) {
+                let v = 8.0 + (e - 1) * 0.5;
+                let dist = `${(e - 1) * 200}-${e * 200}m`;
+                tiempoAcumuladoSegundos += (720 / v);
+                let tiempoPredeterminado = formatearTiempoTeorico(tiempoAcumuladoSegundos);
+
+                listaAtletas.forEach(atleta => {
+                    const tr = document.createElement('tr');
+                    tr.id = `celda-conconi-${e}-${atleta.id}`;
+                    tr.innerHTML = `<td>${e}</td><td><strong>${atleta.id}</strong></td><td>${dist}</td><td>${v.toFixed(1)}</td><td class="col-fc">---</td><td class="col-t">${tiempoPredeterminado}</td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+        } 
+        else if (protocoloActualId === "navette") {
+            titulo.textContent = "🧬 TELEMETRÍA INTEGRADA - COURSE NAVETTE (21 NIVELES)";
+            thHead.innerHTML = `<tr><th>Nivel</th><th>Vuelta</th><th>ID Atleta</th><th>Velocidad (km/h)</th><th>Distancia</th><th>FC (lpm)</th><th>Tiempo Acum.</th></tr>`;
+            motor.totalEstadios = tramosNavette.length;
+
+            listaAtletas.forEach(atleta => {
+                const tr = document.createElement('tr');
+                tr.id = `celda-navette-0-0-${atleta.id}`;
+                tr.className = "fila-reposo-estilo";
+                tr.innerHTML = `<td>0</td><td>0</td><td><strong>${atleta.id}</strong></td><td>0.0</td><td>0m</td><td class="col-fc">---</td><td class="col-t">00:00</td>`;
+                tbody.appendChild(tr);
+            });
+
+            tramosNavette.forEach(tramo => {
+                for(let vu = 1; vu <= tramo.v; vu++) {
+                    tiempoAcumuladoSegundos += (72 / tramo.vel);
+                    let tiempoPredeterminado = formatearTiempoTeorico(tiempoAcumuladoSegundos);
+
+                    listaAtletas.forEach(atleta => {
+                        const tr = document.createElement('tr');
+                        tr.id = `celda-navette-${tramo.n}-${vu}-${atleta.id}`;
+                        tr.innerHTML = `<td>${tramo.n}</td><td>${vu}</td><td><strong>${atleta.id}</strong></td><td>${tramo.vel.toFixed(1)}</td><td>${vu * 20}m</td><td class="col-fc">---</td><td class="col-t">${tiempoPredeterminado}</td>`;
+                        tbody.appendChild(tr);
+                    });
+                }
+            });
+        } 
+        else if (protocoloActualId === "cooper") {
+            titulo.textContent = "🏃‍♂️ TELEMETRÍA DINÁMICA - TEST DE COOPER (12 MINUTOS)";
+            thHead.innerHTML = `<tr><th>Minuto</th><th>ID Atleta</th><th>Distancia Estimada</th><th>Velocidad Prom.</th><th>FC (lpm)</th><th>Tiempo Acum.</th></tr>`;
+            motor.totalEstadios = 12;
+            
+            listaAtletas.forEach(atleta => {
+                const tr = document.createElement('tr');
+                tr.id = `celda-cooper-0-${atleta.id}`;
+                tr.className = "fila-reposo-estilo";
+                tr.innerHTML = `<td>0</td><td><strong>${atleta.id}</strong></td><td>0 m</td><td>0.0 km/h</td><td class="col-fc">---</td><td class="col-t">00:00</td>`;
+                tbody.appendChild(tr);
+            });
+
+            for(let m = 1; m <= 12; m++) {
+                let tiempoPredeterminado = (m < 10 ? "0" + m : m) + ":00";
+                listaAtletas.forEach(atleta => {
+                    const tr = document.createElement('tr');
+                    tr.id = `celda-cooper-${m}-${atleta.id}`;
+                    tr.innerHTML = `<td>${m} Min</td><td><strong>${atleta.id}</strong></td><td class="col-dist">Calculando...</td><td>12.0 km/h</td><td class="col-fc">---</td><td class="col-t">${tiempoPredeterminado}</td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+        else if (protocoloActualId === "george_fisher") {
+            titulo.textContent = "WALK TEST - GEORGE-FISHER (CAMINATA 1.6 KM)";
+            thHead.innerHTML = `<tr><th>Etapa / Minuto</th><th>ID Atleta</th><th>Distancia Recorridos</th><th>Velocidad Marcha</th><th>FC (lpm)</th><th>Tiempo Acum.</th></tr>`;
+            motor.totalEstadios = 15;
+
+            listaAtletas.forEach(atleta => {
+                const tr = document.createElement('tr');
+                tr.id = `celda-george_fisher-0-${atleta.id}`;
+                tr.className = "fila-reposo-estilo";
+                tr.innerHTML = `<td>0 (Basal)</td><td><strong>${atleta.id}</strong></td><td>0 m</td><td>0.0 km/h</td><td class="col-fc">---</td><td class="col-t">00:00</td>`;
+                tbody.appendChild(tr);
+            });
+
+            for(let m = 1; m <= 15; m++) {
+                let tStr = (m < 10 ? "0" + m : m) + ":00";
+                let distEst = Math.min(1609, Math.round((1609 / 12) * m));
+                listaAtletas.forEach(atleta => {
+                    const tr = document.createElement('tr');
+                    tr.id = `celda-george_fisher-${m}-${atleta.id}`;
+                    tr.innerHTML = `<td>Minuto ${m}</td><td><strong>${atleta.id}</strong></td><td>${distEst} m / 1609m</td><td>6.5 km/h</td><td class="col-fc">---</td><td class="col-t">${tStr}</td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+        else {
+            const cantEstadios = protConfig ? protConfig.estadios : 10;
+            titulo.textContent = `⚙️ TELEMETRÍA - ${protConfig.nombre.toUpperCase()}`;
+            thHead.innerHTML = `<tr><th>Etapa</th><th>ID Atleta</th><th>Modo</th><th>FC (lpm)</th><th>Tiempo Acum.</th></tr>`;
+            motor.totalEstadios = cantEstadios;
+
+            listaAtletas.forEach(atleta => {
+                const tr = document.createElement('tr');
+                tr.id = `celda-custom-0-${atleta.id}`;
+                tr.className = "fila-reposo-estilo";
+                tr.innerHTML = `<td>0 (Basal)</td><td><strong>${atleta.id}</strong></td><td>Reposo</td><td class="col-fc">---</td><td class="col-t">00:00</td>`;
+                tbody.appendChild(tr);
+            });
+
+            for(let e = 1; e <= cantEstadios; e++) {
+                let tStr = (e < 10 ? "0" + e : e) + ":00";
+                listaAtletas.forEach(atleta => {
+                    const tr = document.createElement('tr');
+                    tr.id = `celda-custom-${e}-${atleta.id}`;
+                    tr.innerHTML = `<td>Etapa ${e}</td><td><strong>${atleta.id}</strong></td><td>Carga Dinámica</td><td class="col-fc">---</td><td class="col-t">${tStr}</td>`;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+    }
+
+    function registrarFilaBaseReposo() {
+        if (chartInstancia.data.labels.indexOf("Reposo") === -1) {
+            chartInstancia.data.labels.push("Reposo");
+        }
+
+        listaAtletas.forEach((atleta, index) => {
+            let rowId = "";
+            if (protocoloActualId === "conconi") rowId = `celda-conconi-0-${atleta.id}`;
+            else if (protocoloActualId === "navette") rowId = `celda-navette-0-0-${atleta.id}`;
+            else if (protocoloActualId === "cooper") rowId = `celda-cooper-0-${atleta.id}`;
+            else if (protocoloActualId === "george_fisher") rowId = `celda-george_fisher-0-${atleta.id}`;
+            else rowId = `celda-custom-0-${atleta.id}`;
+
+            const filaReposo = document.getElementById(rowId);
+            let fcValorBasal = atleta.estadoEnlace === "conectado" ? atleta.fcActual : null;
+
+            if (filaReposo) {
+                filaReposo.classList.add("fila-completada");
+                filaReposo.querySelector('.col-fc').textContent = fcValorBasal ? fcValorBasal : "0 (Desc.)";
+            }
+
+            if (chartInstancia.data.datasets[index]) {
+                chartInstancia.data.datasets[index].data.push(fcValorBasal);
+            }
+        });
+
+        if (chartInstancia.data.datasets[listaAtletas.length]) {
+            chartInstancia.data.datasets[listaAtletas.length].data.push(0);
+        }
+
+        chartInstancia.update();
+        actualizarReporteClinico();
+    }
+
+    function iniciarTest() {
+        if (appActiva) return;
+        if (listaAtletas.length === 0) return alert("Añade al menos un atleta antes de iniciar.");
+        
+        registrarFilaBaseReposo();
+        appActiva = true;
+        intervaloGlobal = setInterval(ejecutarCronometros, 10);
+        procesarCicloFisiologico();
+    }
+
+    function pausarTest() {
+        appActiva = false;
+        clearInterval(intervaloGlobal);
+        clearTimeout(timeoutEstadio);
+    }
+
+    function reiniciarTest() {
+        pausarTest();
+        tiempoMs = 0;
+        
+        document.getElementById('main-cronometro').textContent = "00:00.00";
+        document.getElementById('head-smo2').textContent = "SmO₂: --%";
+
+        motor.estadioActual = 1;
+        motor.subPeriodo = 1;
+        
+        // Limpiamos notas personalizadas de los atletas al reiniciar el test
+        listaAtletas.forEach(a => a.notasPersonalizadas = null);
+
+        document.getElementById('cuerpo-interpretacion').innerHTML = `
+            <p style="text-align: center; color: #64748b; font-style: italic; margin: 0;">
+                El análisis fisiológico y reporte de rendimiento se autogenerará dinámicamente conforme se registren lecturas de esfuerzo.
+            </p>`;
+        
+        preconstruirEstructuraTabla();
+        inicializarGraficoBasico();
+        actualizarInterfazAtletas();
+    }
+
+    function ejecutarCronometros() {
+        tiempoMs += 10;
+        let totalSegundos = Math.floor(tiempoMs / 1000);
+        let minutos = Math.floor(totalSegundos / 60);
+        let segundos = totalSegundos % 60;
+        let centesimas = Math.floor((tiempoMs % 1000) / 10);
+
+        let str = (minutos < 10 ? "0" + minutos : minutos) + ":" + 
+                  (segundos < 10 ? "0" + segundos : segundos) + "." + 
+                  (centesimas < 10 ? "0" + centesimas : centesimas);
+                  
+        document.getElementById('main-cronometro').textContent = str;
+    }
+
+    function procesarCicloFisiologico() {
+        if (!appActiva) return;
+
+        let duracionBloqueMs = 0;
+        if (protocoloActualId === "conconi") {
+            duracionBloqueMs = (720 / (8.0 + (motor.estadioActual - 1) * 0.5)) * 1000; 
+        } 
+        else if (protocoloActualId === "navette") {
+            let configNivel = tramosNavette[motor.estadioActual - 1] || tramosNavette[0];
+            duracionBloqueMs = (72 / configNivel.vel) * 1000; 
+        } 
+        else if (protocoloActualId === "cooper" || protocoloActualId === "george_fisher") {
+            duracionBloqueMs = 60000;
+        }
+        else {
+            duracionBloqueMs = 30000;
+        }
+
+        timeoutEstadio = setTimeout(completarBloqueActual, duracionBloqueMs);
+    }
+
+    function completarBloqueActual() {
+        let tagEjeX = "";
+        let velActual = 0;
+        let configNivelNavette = tramosNavette[motor.estadioActual - 1] || tramosNavette[0];
+
+        if (protocoloActualId === "conconi") {
+            tagEjeX = `E${motor.estadioActual}`;
+            velActual = 8.0 + (motor.estadioActual - 1) * 0.5;
+        }
+        else if (protocoloActualId === "navette") {
+            tagEjeX = `N${motor.estadioActual}-V${motor.subPeriodo}`;
+            velActual = configNivelNavette.vel;
+        }
+        else if (protocoloActualId === "cooper") {
+            tagEjeX = `M${motor.estadioActual}`;
+            velActual = 12.0; 
+        }
+        else if (protocoloActualId === "george_fisher") {
+            tagEjeX = `M${motor.estadioActual}`;
+            velActual = 6.5;
+        }
+        else {
+            tagEjeX = `P${motor.estadioActual}`;
+            velActual = 10.0;
+        }
+        
+        chartInstancia.data.labels.push(tagEjeX);
+
+        listaAtletas.forEach((atleta, index) => {
+            let rowId = "";
+            if (protocoloActualId === "conconi") rowId = `celda-conconi-${motor.estadioActual}-${atleta.id}`;
+            else if (protocoloActualId === "navette") rowId = `celda-navette-${motor.estadioActual}-${motor.subPeriodo}-${atleta.id}`;
+            else if (protocoloActualId === "cooper") rowId = `celda-cooper-${motor.estadioActual}-${atleta.id}`;
+            else if (protocoloActualId === "george_fisher") rowId = `celda-george_fisher-${motor.estadioActual}-${atleta.id}`;
+            else rowId = `celda-custom-${motor.estadioActual}-${atleta.id}`;
+
+            const filaFija = document.getElementById(rowId);
+            let fcParaGrabar = atleta.estadoEnlace === "conectado" ? atleta.fcActual : 0;
+
+            if (filaFija) {
+                filaFija.classList.add("fila-completada");
+                filaFija.querySelector('.col-fc').textContent = fcParaGrabar > 0 ? fcParaGrabar : "0 (Desc.)";
+                
+                if (protocoloActualId === "cooper") {
+                    let dEstimada = Math.round(((12.0 * 1000) / 60) * motor.estadioActual);
+                    filaFija.querySelector('.col-dist').textContent = `${dEstimada} m`;
+                }
+            }
+
+            if (chartInstancia.data.datasets[index]) {
+                chartInstancia.data.datasets[index].data.push(fcParaGrabar > 0 ? fcParaGrabar : null);
+            }
+        });
+
+        if (chartInstancia.data.datasets[listaAtletas.length]) {
+            chartInstancia.data.datasets[listaAtletas.length].data.push(velActual);
+        }
+
+        chartInstancia.update();
+        actualizarReporteClinico();
+
+        if (protocoloActualId === "conconi") {
+            if (motor.estadioActual >= motor.totalEstadios) return terminarTestGrupal("Test de Conconi Finalizado.");
+            motor.estadioActual++;
+        } 
+        else if (protocoloActualId === "navette") {
+            let maxVueltas = configNivelNavette.v;
+            
+            if (motor.subPeriodo < maxVueltas) {
+                motor.subPeriodo++;
+                generarSenalAudio(850, 0.15); 
+            } else {
+                if (motor.estadioActual >= tramosNavette.length) {
+                    generarSenalAudio(440, 0.6);
+                    return terminarTestGrupal("¡Test de Course Navette Completado!");
+                }
+                motor.estadioActual++;
+                motor.subPeriodo = 1;
+                generarSenalAudio(1300, 0.40); 
+            }
+        } 
+        else if (protocoloActualId === "cooper") {
+            if (motor.estadioActual >= motor.totalEstadios) return terminarTestGrupal("Test de Cooper Finalizado.");
+            motor.estadioActual++;
+        }
+        else if (protocoloActualId === "george_fisher") {
+            if (motor.estadioActual >= motor.totalEstadios) return terminarTestGrupal("Test de George-Fisher Finalizado (1 Milla).");
+            motor.estadioActual++;
+        }
+        else {
+            if (motor.estadioActual >= motor.totalEstadios) return terminarTestGrupal("Protocolo Personalizado Finalizado.");
+            motor.estadioActual++;
+        }
+
+        procesarCicloFisiologico();
+    }
+
+    function inicializarGraficoBasico() {
+        const ctx = document.getElementById('canvasGrafico').getContext('2d');
+        if (chartInstancia) chartInstancia.destroy();
+
+        const datasets = listaAtletas.map(atleta => ({
+            label: `FC Atleta ID ${atleta.id} (lpm)`,
+            data: [],
+            borderColor: atleta.color,
+            backgroundColor: atleta.color,
+            borderWidth: 2,
+            tension: 0.15,
+            yAxisID: 'y'
+        }));
+
+        datasets.push({
+            label: 'Velocidad de Carga (km/h)',
+            data: [],
+            borderColor: '#64748b',
+            backgroundColor: 'rgba(100, 116, 139, 0.05)',
+            borderWidth: 2,
+            borderDash: [5, 5],
+            tension: 0,
+            yAxisID: 'y1'
+        });
+
+        chartInstancia = new Chart(ctx, {
+            type: 'line',
+            data: { labels: [], datasets: datasets },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: 'Etapas de Carga Realizadas' } },
+                    y: { 
+                        min: 50, 
+                        max: 200, 
+                        position: 'left',
+                        title: { display: true, text: 'Frecuencia Cardíaca (lpm)' } 
+                    },
+                    y1: { 
+                        min: 0, 
+                        max: 22, 
+                        position: 'right',
+                        title: { display: true, text: 'Velocidad (km/h)' },
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
+        });
+    }
+
+    // --- FUNCIÓN PARA ALMACENAR LA NOTA DEL USUARIO SIN QUE SE BORRE AL ACTUALIZAR LA TELEMETRÍA ---
+    function guardarNotaAtleta(id, texto) {
+        const atleta = listaAtletas.find(a => a.id === id);
+        if (atleta) {
+            atleta.notasPersonalizadas = texto;
+        }
+    }
+
+    function actualizarReporteClinico() {
+        const contenedor = document.getElementById('cuerpo-interpretacion');
+        if (listaAtletas.length === 0) return;
+
+        let htmlContent = `<h4 style="margin-top: 0; color: var(--bg-header); border-bottom: 2px solid var(--border-color); padding-bottom: 5px;">Análisis Consolidado de Esfuerzo Cardiovascular</h4>`;
+        
+        listaAtletas.forEach((atleta, index) => {
+            let datasetFC = chartInstancia.data.datasets[index]?.data || [];
+            let fcsValidas = datasetFC.filter(v => v !== null && v !== undefined && v > 0);
+            
+            if (fcsValidas.length === 0) {
+                htmlContent += `
+                    <div style="padding: 10px; background: #fff; border-left: 4px solid ${atleta.color}; margin-bottom: 10px; border-radius: 4px; border: 1px solid var(--border-color);">
+                        <strong>Atleta:</strong> ${atleta.nombre} (ID ${atleta.id})<br>
+                        <span style="color: #64748b; font-style: italic;">Esperando lectura de sensor real para procesar datos biométricos...</span>
+                    </div>`;
+                return;
+            }
+
+            let fcBasal = fcsValidas[0];
+            let fcMaxima = Math.max(...fcsValidas);
+            let fcActual = fcsValidas[fcsValidas.length - 1];
+            let incrementoTotal = fcMaxima - fcBasal;
+            let FcMaxTeorica = 220 - atleta.edad;
+            
+            // Sugerencia de cálculo automático por defecto
+            let evaluacionAuto = "";
+            if (protocoloActualId === "navette") {
+                evaluacionAuto = `Prueba Course Navette. FC basal registrada de ${fcBasal} lpm. Peak de ${fcMaxima} lpm (${((fcMaxima/FcMaxTeorica)*100).toFixed(1)}% FC Máx Teórica).`;
+            } else if (protocoloActualId === "conconi") {
+                evaluacionAuto = `Test de Conconi. Punto de deflexión cardiovascular aproximado en ${fcMaxima - 10} lpm.`;
+            } else if (protocoloActualId === "cooper") {
+                evaluacionAuto = `Test de Cooper. Respuesta aeróbica sostenida con incremento de +${incrementoTotal} lpm sobre su estado basal.`;
+            } else if (protocoloActualId === "george_fisher") {
+                evaluacionAuto = `Test de caminata George-Fisher (1.6 km). FC de retorno submáximo registrada en ${fcActual} lpm.`;
+            } else {
+                evaluacionAuto = `Evaluación bajo protocolo personalizado. Registra variabilidad cronotrópica continua de ${fcBasal} lpm a ${fcMaxima} lpm.`;
+            }
+
+            // Si el evaluador ya escribió una nota, conservamos su texto; si no, mostramos la sugerencia automática
+            let notaMostrada = (atleta.notasPersonalizadas !== null && atleta.notasPersonalizadas !== undefined) 
+                               ? atleta.notasPersonalizadas 
+                               : evaluacionAuto;
+
+            htmlContent += `
+                <div style="padding: 12px; background: #fff; border-left: 4px solid ${atleta.color}; margin-bottom: 10px; border-radius: 4px; border: 1px solid var(--border-color); box-shadow: 0 1px 3px rgba(0,0,0,0.02);">
+                    <div style="display: flex; justify-content: space-between; margin-bottom: 6px;">
+                        <strong>${atleta.nombre} (${atleta.edad} años)</strong>
+                        <span style="font-weight: bold; color: ${atleta.color};">ID: ${atleta.id}</span>
+                    </div>
+                    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 12px; margin-bottom: 8px; background: #f8fafc; padding: 6px; border-radius: 4px;">
+                        <div>Basal: <strong>${fcBasal} lpm</strong></div>
+                        <div>Máxima: <strong>${fcMaxima} lpm</strong></div>
+                        <div>Actual: <strong>${fcActual} lpm</strong></div>
+                        <div>Delta: <strong>+${incrementoTotal} lpm</strong></div>
+                    </div>
+                    <div style="margin-top: 6px;">
+                        <label style="font-size: 11px; font-weight: bold; color: #475569; display: block; margin-bottom: 3px;">
+                            ✍️ Interpretación Fisiológica del Evaluador:
+                        </label>
+                        <textarea 
+                            class="notas-evaluador" 
+                            rows="2"
+                            placeholder="Escribe aquí tu análisis o diagnóstico..." 
+                            oninput="guardarNotaAtleta('${atleta.id}', this.value)"
+                        >${notaMostrada}</textarea>
+                    </div>
+                </div>
+            `;
+        });
+
+        contenedor.innerHTML = htmlContent;
+    }
+
+    function imprimirReporte() {
+        window.print();
+    }
+
+    function agregarAtleta() {
+        const idInput = document.getElementById('atleta-id');
+        const nombreInput = document.getElementById('atleta-nombre');
+        const edadInput = document.getElementById('atleta-edad');
+        const id = idInput.value.trim();
+        const nombre = nombreInput.value.trim().toUpperCase();
+        const edad = parseInt(edadInput.value) || 25;
+
+        if (!id || !nombre) return alert("Por favor, introduce el nombre del atleta.");
+        if (listaAtletas.some(a => a.id === id)) return alert("El ID ya está asignado.");
+
+        const gamaColores = ["#1a73e8", "#e63994", "#f5a623", "#0fc187"];
+        listaAtletas.push({ id, nombre, edad, color: gamaColores[listaAtletas.length % 4], fcActual: 0, estadoEnlace: "desconectado", notasPersonalizadas: null });
+        
+        let proxId = parseInt(id) + 1;
+        idInput.value = proxId < 10 ? "0" + proxId : proxId;
+        nombreInput.value = ""; 
+        
+        actualizarInterfazAtletas();
+        preconstruirEstructuraTabla();
+        inicializarGraficoBasico();
+    }
+
+    function editarAtleta(id) {
+        const atleta = listaAtletas.find(a => a.id === id);
+        if (!atleta) return;
+        
+        const nuevoNombre = prompt("Editar nombre del atleta:", atleta.nombre);
+        if (nuevoNombre && nuevoNombre.trim()) {
+            atleta.nombre = nuevoNombre.trim().toUpperCase();
+            actualizarInterfazAtletas();
+            actualizarReporteClinico();
+        }
+    }
+
+    function eliminarAtleta(id) {
+        if (confirm("¿Seguro que deseas eliminar este atleta de la sesión activa?")) {
+            listaAtletas = listaAtletas.filter(a => a.id !== id);
+            actualizarInterfazAtletas();
+            preconstruirEstructuraTabla();
+            inicializarGraficoBasico();
+        }
+    }
+
+    function terminarTestGrupal(msg) {
+        appActiva = false;
+        clearInterval(intervaloGlobal);
+        alert(msg);
+    }
+</script>
+</body>
+</html>

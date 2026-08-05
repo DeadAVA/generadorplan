@@ -1,4 +1,5 @@
 import unittest
+from uuid import uuid4
 
 from fastapi.testclient import TestClient
 
@@ -8,12 +9,22 @@ from app.main import app
 class ApiIntegrationTests(unittest.TestCase):
     def test_full_athlete_and_plan_workflow(self):
         with TestClient(app) as client:
+            suffix = uuid4().hex[:8]
+            original_name = f"ATLETA DE PRUEBA {suffix}"
+            edited_name = f"ATLETA EDITADO {suffix}"
+
+            forwarded_host = client.get(
+                "/api/health",
+                headers={"host": "cloudflare-origin.internal"},
+            )
+            self.assertEqual(forwarded_host.status_code, 200, forwarded_host.text)
+
             health = client.get("/api/health")
             self.assertEqual(health.status_code, 200)
             self.assertGreaterEqual(health.json()["athletes"], 5)
 
             payload = {
-                "name": "ATLETA DE PRUEBA",
+                "name": original_name,
                 "category": "400-800",
                 "birth_date": None,
                 "gender": "",
@@ -32,10 +43,10 @@ class ApiIntegrationTests(unittest.TestCase):
             self.assertEqual(created.status_code, 201, created.text)
             athlete_id = created.json()["id"]
 
-            payload["name"] = "ATLETA EDITADO"
+            payload["name"] = edited_name
             edited = client.put(f"/api/athletes/{athlete_id}", json=payload)
             self.assertEqual(edited.status_code, 200, edited.text)
-            self.assertEqual(edited.json()["name"], "ATLETA EDITADO")
+            self.assertEqual(edited.json()["name"], edited_name)
 
             generated = client.post("/api/plans/generate/automatic", json={
                 "athlete_id": athlete_id,
@@ -51,7 +62,7 @@ class ApiIntegrationTests(unittest.TestCase):
             plan = generated.json()
             self.assertEqual(len(plan["days"]), 7)
             self.assertGreater(sum(len(day["exercises"]) for day in plan["days"]), 10)
-            self.assertEqual(plan["athlete_name"], "ATLETA EDITADO")
+            self.assertEqual(plan["athlete_name"], edited_name)
 
             read_plan = client.get(f"/api/plans/{plan['id']}")
             self.assertEqual(read_plan.status_code, 200)
@@ -70,7 +81,7 @@ class ApiIntegrationTests(unittest.TestCase):
             )
             self.assertEqual(restored.status_code, 200, restored.text)
             restored_athletes = client.get("/api/athletes?include_inactive=true").json()
-            restored_test = next(item for item in restored_athletes if item["name"] == "ATLETA EDITADO")
+            restored_test = next(item for item in restored_athletes if item["name"] == edited_name)
             restored_plans = client.get(f"/api/plans?athlete_id={restored_test['id']}").json()
             self.assertEqual(len(restored_plans), 1)
 

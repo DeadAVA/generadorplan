@@ -30,6 +30,53 @@ function toast(message, error = false) {
   toastTimer = setTimeout(() => $('toast').className = 'toast', 3200);
 }
 
+function showConfirm(message, title = '¿Confirmar?', kicker = 'Confirmar acción') {
+  return new Promise(resolve => {
+    $('confirmTitle').textContent = title;
+    $('confirmKicker').textContent = kicker;
+    $('confirmMessage').textContent = message;
+    const dlg = $('confirmDialog');
+    dlg.showModal();
+    function cleanup(result) {
+      dlg.close();
+      $('confirmOk').removeEventListener('click', onOk);
+      $('confirmCancel').removeEventListener('click', onCancel);
+      resolve(result);
+    }
+    function onOk() { cleanup(true); }
+    function onCancel() { cleanup(false); }
+    $('confirmOk').addEventListener('click', onOk);
+    $('confirmCancel').addEventListener('click', onCancel);
+  });
+}
+
+function showPrompt(message, defaultValue = '', title = 'Ingresa el valor') {
+  return new Promise(resolve => {
+    $('promptTitle').textContent = title;
+    $('promptLabel').textContent = message;
+    $('promptInput').value = defaultValue;
+    const dlg = $('promptDialog');
+    dlg.showModal();
+    setTimeout(() => $('promptInput').select(), 50);
+    function cleanup(result) {
+      dlg.close();
+      $('promptOk').removeEventListener('click', onOk);
+      $('promptCancel').removeEventListener('click', onCancel);
+      dlg.removeEventListener('keydown', onKey);
+      resolve(result);
+    }
+    function onOk() { cleanup($('promptInput').value.trim() || null); }
+    function onCancel() { cleanup(null); }
+    function onKey(e) {
+      if (e.key === 'Enter') { e.preventDefault(); cleanup($('promptInput').value.trim() || null); }
+      if (e.key === 'Escape') { e.preventDefault(); cleanup(null); }
+    }
+    $('promptOk').addEventListener('click', onOk);
+    $('promptCancel').addEventListener('click', onCancel);
+    dlg.addEventListener('keydown', onKey);
+  });
+}
+
 function localDate(value) {
   if (!value) return '';
   return new Intl.DateTimeFormat('es-MX', { day:'numeric', month:'short', year:'numeric', timeZone:'UTC' }).format(new Date(`${value}T00:00:00Z`));
@@ -133,7 +180,9 @@ function renderAthleteOptions() {
 function switchView(view) {
   document.querySelectorAll('.view').forEach(item => item.classList.toggle('active', item.id === `${view}View`));
   document.querySelectorAll('.nav-item').forEach(item => item.classList.toggle('active', item.dataset.view === view));
-  $('viewTitle').textContent = ({dashboard:'Resumen',athletes:'Atletas',plans:'Planes semanales'})[view];
+  const titles = { dashboard:'Resumen', athletes:'Atletas', plans:'Planes semanales', oxyfield:'OxyField Pro', runstats:'RUN-STATS HRV' };
+  $('viewTitle').textContent = titles[view] || view;
+  if (view === 'oxyfield' && typeof window.oxyfieldInit === 'function') window.oxyfieldInit();
 }
 
 function openAthleteDialog(athlete = null) {
@@ -166,7 +215,8 @@ async function saveAthlete(event) {
 
 async function deleteAthlete(id) {
   const athlete = state.athletes.find(item => item.id === id);
-  if (!confirm(`¿Eliminar a ${athlete.name}? También se eliminarán todos sus planes.`)) return;
+  const confirmed = await showConfirm(`¿Eliminar a ${athlete.name}? También se eliminarán todos sus planes.`, '¿Eliminar atleta?', 'Acción irreversible');
+  if (!confirmed) return;
   try { await api(`/api/athletes/${id}`, {method:'DELETE'}); await loadAll(); toast('Atleta eliminado.'); } catch (error) { toast(error.message, true); }
 }
 
@@ -240,7 +290,8 @@ async function savePlan(event) {
     const path = state.editingPlanId ? `/api/plans/${state.editingPlanId}` : '/api/plans';
     const result = await api(path,{method:state.editingPlanId?'PUT':'POST',body:JSON.stringify(collectPlanPayload())});
     $('planDialog').close(); await loadAll(); toast('Plan semanal guardado.');
-    if (confirm('¿Quieres abrir la hoja lista para imprimir?')) window.open(`/print?id=${result.id}`,'_blank');
+    const openPrint = await showConfirm('¿Quieres abrir la hoja lista para imprimir?', 'Vista de impresión', 'Plan guardado');
+    if (openPrint) window.open(`/print?id=${result.id}`,'_blank');
   } catch (error) { toast(error.message,true); }
 }
 
@@ -257,13 +308,15 @@ async function generatePlan(event) {
 }
 
 async function deletePlan(id) {
-  if (!confirm('¿Eliminar este plan semanal?')) return;
+  const confirmed = await showConfirm('¿Eliminar este plan semanal?', '¿Eliminar plan?', 'Acción irreversible');
+  if (!confirmed) return;
   try { await api(`/api/plans/${id}`,{method:'DELETE'});await loadAll();toast('Plan eliminado.'); } catch(error){toast(error.message,true);}
 }
 
 async function restoreBackup(event) {
   const file=event.target.files[0];event.target.value='';if(!file)return;
-  if(!confirm('La restauración reemplazará todos los atletas y planes actuales. ¿Continuar?'))return;
+  const confirmed = await showConfirm('La restauración reemplazará todos los atletas y planes actuales. ¿Continuar?', '¿Restaurar base de datos?', 'Acción irreversible');
+  if(!confirmed)return;
   const form=new FormData();form.append('file',file);
   try{const result=await api('/api/backups/json',{method:'POST',body:form});await loadAll();toast(`Base restaurada: ${result.athletes} atletas y ${result.plans} planes.`);}catch(error){toast(error.message,true);}
 }

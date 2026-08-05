@@ -10,6 +10,9 @@
   <link rel="manifest" href="/manifest.webmanifest">
   <link rel="icon" href="/static/icon.svg" type="image/svg+xml">
   <link rel="stylesheet" href="/static/styles.css">
+  <!-- Librerías externas -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body>
   <div class="app-shell">
@@ -19,6 +22,8 @@
         <button class="nav-item active" data-view="dashboard"><span>⌂</span>Resumen</button>
         <button class="nav-item" data-view="athletes"><span>◎</span>Atletas</button>
         <button class="nav-item" data-view="plans"><span>▦</span>Planes</button>
+        <button class="nav-item" data-view="oxyfield"><span>🔬</span>OxyField</button>
+        <button class="nav-item" data-view="runstats"><span>📊</span>RUN-STATS</button>
       </nav>
       <div class="sidebar-footer"><span class="status-dot"></span><span id="systemStatus">Conectando…</span></div>
     </aside>
@@ -26,7 +31,7 @@
     <main class="main">
       <header class="topbar">
         <div><p class="kicker">Panel del entrenador</p><h1 id="viewTitle">Resumen</h1></div>
-        <div class="top-actions">
+        <div class="top-actions" id="topActions">
           <a class="btn secondary" href="/api/backups/json">Descargar base</a>
           <button class="btn secondary" id="restoreBtn">Restaurar</button>
           <input type="file" id="restoreFile" accept="application/json,.json" hidden>
@@ -34,6 +39,7 @@
         </div>
       </header>
 
+      <!-- ══ RESUMEN ══════════════════════════════════════════════ -->
       <section class="view active" id="dashboardView">
         <div class="metrics">
           <article class="metric"><span>Atletas activos</span><strong id="metricAthletes">0</strong><small>Base de trabajo</small></article>
@@ -54,6 +60,7 @@
         </div>
       </section>
 
+      <!-- ══ ATLETAS ═══════════════════════════════════════════════ -->
       <section class="view" id="athletesView">
         <div class="section-toolbar">
           <label class="search"><span>⌕</span><input id="athleteSearch" type="search" placeholder="Buscar atleta…"></label>
@@ -62,6 +69,7 @@
         <div class="athlete-grid" id="athleteGrid"></div>
       </section>
 
+      <!-- ══ PLANES ════════════════════════════════════════════════ -->
       <section class="view" id="plansView">
         <article class="automation-banner">
           <div><p class="kicker">Planificación asistida</p><h2>Generador especializado</h2><p>Crea una estructura completa para fondo, ruta o 400–800 m y ajústala después.</p></div>
@@ -74,9 +82,176 @@
         </div>
         <div class="plan-list" id="planList"></div>
       </section>
+
+      <!-- ══ OXYFIELD PRO ══════════════════════════════════════════ -->
+      <section class="view" id="oxyfieldView">
+        <div class="oxy-topbar">
+          <div class="oxy-smo2-widget">
+            <span class="oxy-lbl">Moxi NIRS</span>
+            <span id="head-smo2" class="oxy-val">SmO₂: --%</span>
+          </div>
+        </div>
+        <div class="oxy-layout">
+          <!-- Panel izquierdo: control -->
+          <div class="oxy-panel-left">
+            <div class="oxy-card">
+              <div class="oxy-card-title">📋 Panel de Control de Test</div>
+              <div id="main-cronometro" class="oxy-cronometro">00:00.00</div>
+              <div class="oxy-controls">
+                <button class="oxy-btn oxy-green" id="oxyBtnStart">Iniciar</button>
+                <button class="oxy-btn oxy-orange" id="oxyBtnPause">Pausar</button>
+                <button class="oxy-btn oxy-gray" id="oxyBtnReset">Reiniciar</button>
+              </div>
+
+              <div class="oxy-field-group">
+                <label class="oxy-label">1. PROTOCOLO</label>
+                <div class="oxy-row">
+                  <select id="protocolo-selector" style="flex:1"></select>
+                  <button class="oxy-icon-btn oxy-green" id="oxyAddProtocol" title="Agregar">+</button>
+                  <button class="oxy-icon-btn oxy-orange" id="oxyEditProtocol" title="Editar">✏️</button>
+                  <button class="oxy-icon-btn oxy-red" id="oxyDelProtocol" title="Eliminar">🗑️</button>
+                </div>
+              </div>
+
+              <div class="oxy-field-group">
+                <label class="oxy-label">2. REGISTRAR ATLETA</label>
+                <div class="oxy-row">
+                  <input type="text" id="atleta-id" style="width:22%" value="01" placeholder="ID">
+                  <input type="text" id="atleta-nombre" style="width:50%" placeholder="Nombre">
+                  <input type="text" id="atleta-edad" style="width:22%" value="30" placeholder="Edad">
+                </div>
+              </div>
+              <div class="oxy-row" style="margin-bottom:10px;gap:6px">
+                <button class="oxy-btn-submit" id="oxyAddAthlete" style="flex:1">＋ Insertar Atleta</button>
+                <button class="btn secondary compact" id="oxyImportAthletes" title="Importar atletas desde la base de datos">⬇ BD</button>
+              </div>
+
+              <label class="oxy-label">ATLETAS ACTIVOS</label>
+              <div id="lista-atletas-registro" class="oxy-atleta-list"></div>
+            </div>
+          </div>
+
+          <!-- Panel derecho: resultados -->
+          <div class="oxy-panel-right">
+            <div class="oxy-card">
+              <div id="titulo-tabla" class="oxy-card-title">🧬 TELEMETRÍA INTEGRADA</div>
+              <div class="oxy-table-scroll">
+                <table><thead id="encabezado-tabla"></thead><tbody id="cuerpo-tabla"></tbody></table>
+              </div>
+            </div>
+
+            <div class="oxy-card">
+              <div class="oxy-card-title">📊 FC Dinámica vs Carga de Velocidad</div>
+              <div class="oxy-chart-container">
+                <canvas id="canvasGrafico"></canvas>
+              </div>
+            </div>
+
+            <div class="oxy-card">
+              <div class="oxy-card-title">📄 Reporte Clínico e Interpretación Fisiológica</div>
+              <div id="cuerpo-interpretacion" class="oxy-report-body">
+                <p style="text-align:center;color:#64748b;font-style:italic;margin:0">
+                  El análisis fisiológico se autogenerará conforme se registren lecturas de esfuerzo.
+                </p>
+              </div>
+              <button class="oxy-btn-submit" id="oxyPrintReport" style="background:#1a73e8;margin-top:12px">
+                🖨️ Imprimir Reporte de Campo Clínico
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ══ RUN-STATS HRV ════════════════════════════════════════ -->
+      <section class="view" id="runstatsView">
+        <!-- Live HR panel -->
+        <div class="rs-panel-live rs-hidden" id="rs-panelLive">
+          <div class="rs-live-header">
+            <span>❤️ TRANSMISIÓN EN VIVO — POLAR H10</span>
+            <span class="rs-badge-live">CONECTADO</span>
+          </div>
+          <div class="rs-bpm-row">
+            <span id="rs-liveBPM" class="rs-bpm">0</span>
+            <span class="rs-bpm-label">Pulsaciones por minuto (BPM)</span>
+          </div>
+        </div>
+
+        <div class="rs-grid">
+          <!-- CSV upload -->
+          <div class="rs-card">
+            <div class="rs-card-title">📁 Cargar Base de Datos Operativa (.csv)</div>
+            <div class="rs-upload-row">
+              <input type="file" id="rs-csvInput" accept=".csv" class="rs-file-input">
+              <button id="rs-btnProcesar" class="rs-btn rs-btn-green">Cargar y Procesar</button>
+            </div>
+          </div>
+
+          <!-- Config -->
+          <div class="rs-card rs-config-card">
+            <div>
+              <label class="rs-form-label">Atleta Seleccionado para Análisis</label>
+              <select id="rs-atletaSelector" class="rs-select">
+                <option value="">Seleccione un atleta o cargue un CSV...</option>
+              </select>
+            </div>
+            <div class="rs-checks">
+              <span class="rs-checks-label">Variables a contrastar en gráfica:</span>
+              <label class="rs-check"><input type="checkbox" id="rs-chkCargaInterna" checked><span class="rs-dot" style="background:#d946ef"></span>Carga Interna (BARRAS)</label>
+              <label class="rs-check"><input type="checkbox" id="rs-chkRMSSD" checked><span class="rs-dot" style="background:#4f46e5"></span>RMSSD (Línea Sólida)</label>
+              <label class="rs-check"><input type="checkbox" id="rs-chkSDNN" checked><span class="rs-dot" style="background:#10b981"></span>SDNN (Punteada)</label>
+              <label class="rs-check"><input type="checkbox" id="rs-chkStress"><span class="rs-dot" style="background:#f59e0b"></span>Stress Score (Punteada)</label>
+              <label class="rs-check"><input type="checkbox" id="rs-chkRatio"><span class="rs-dot" style="background:#06b6d4"></span>Ratio S:PS (Punteada)</label>
+            </div>
+          </div>
+
+          <!-- KPIs -->
+          <div class="rs-kpi-grid">
+            <div class="rs-kpi"><p>Último RMSSD Basal</p><h3 id="rs-kpiRmssd">— <span>ms</span></h3></div>
+            <div class="rs-kpi"><p>Carga Interna Semanal</p><h3 id="rs-kpiCarga" style="color:#c026d3">— <span>UA</span></h3></div>
+            <div class="rs-kpi"><p>Stress Score Promedio</p><h3 id="rs-kpiStress" style="color:#f59e0b">—</h3></div>
+            <div class="rs-kpi"><p>Sexo Biológico</p><h3 id="rs-kpiSexo" style="color:#6366f1">—</h3></div>
+          </div>
+
+          <!-- Tabla + consola -->
+          <div class="rs-bottom-grid">
+            <div class="rs-card rs-table-card">
+              <div class="rs-card-title">
+                📊 Historial de Laboratorio y Control de Cargas
+                <span id="rs-contador" class="rs-badge-count">0 Registros</span>
+              </div>
+              <div class="rs-table-scroll">
+                <table class="rs-table">
+                  <thead>
+                    <tr><th>Fecha</th><th>Dur.</th><th>Borg</th><th>Carga Int.</th><th>RMSSD</th><th>Stress</th><th>Ratio S:PS</th><th>RMSSD-Slope</th></tr>
+                  </thead>
+                  <tbody id="rs-tablaCuerpo">
+                    <tr><td colspan="8" class="rs-empty">Cargue el archivo CSV para iniciar el procesamiento.</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            <div class="rs-card rs-diag-card">
+              <div class="rs-card-title">🔬 Consola de Interpretación Médica</div>
+              <div id="rs-diagnostico" class="rs-diag-body">
+                <p>Esperando la selección de un atleta para estructurar el diagnóstico autonómico.</p>
+              </div>
+              <div class="rs-metodologia">Clasificación basada en Naranjo Orellana (2015)</div>
+            </div>
+          </div>
+
+          <!-- Acciones -->
+          <div class="rs-actions">
+            <button id="rs-btnBluetooth" class="rs-btn rs-btn-red">🔵 Conectar Banda Polar H10</button>
+            <button id="rs-btnPDF" class="rs-btn rs-btn-blue">📄 Generar Informe Semanal Completo</button>
+          </div>
+        </div>
+        <!-- Canvas oculto para Chart→PDF -->
+        <canvas id="rs-hiddenCanvas" width="1000" height="380" style="position:absolute;left:-9999px;top:-9999px"></canvas>
+      </section>
     </main>
   </div>
 
+  <!-- ══ MODALES PRINCIPALES ══════════════════════════════════════ -->
   <dialog id="athleteDialog" class="modal">
     <form id="athleteForm">
       <header class="modal-head"><div><p class="kicker">Expediente</p><h2 id="athleteModalTitle">Nuevo atleta</h2></div><button type="button" class="icon-btn" data-close="athleteDialog">×</button></header>
@@ -138,7 +313,37 @@
     </form>
   </dialog>
 
+  <!-- Modal de confirmación reutilizable (reemplaza confirm()) -->
+  <dialog id="confirmDialog" class="modal small">
+    <div class="modal-head">
+      <div><p class="kicker" id="confirmKicker">Confirmar acción</p><h2 id="confirmTitle">¿Continuar?</h2></div>
+    </div>
+    <div class="modal-body"><p id="confirmMessage" style="margin:0;line-height:1.6;color:#334155"></p></div>
+    <footer class="modal-actions">
+      <button class="btn secondary" id="confirmCancel">Cancelar</button>
+      <button class="btn primary" id="confirmOk">Aceptar</button>
+    </footer>
+  </dialog>
+
+  <!-- Modal de input reutilizable (reemplaza prompt()) -->
+  <dialog id="promptDialog" class="modal small">
+    <div class="modal-head">
+      <div><p class="kicker">Ingresar dato</p><h2 id="promptTitle">Ingresa el valor</h2></div>
+    </div>
+    <div class="modal-body">
+      <label id="promptLabel" for="promptInput" style="color:#53667c;font-size:.78rem;font-weight:800;display:block;margin-bottom:6px">Valor</label>
+      <input id="promptInput" type="text">
+    </div>
+    <footer class="modal-actions">
+      <button class="btn secondary" id="promptCancel">Cancelar</button>
+      <button class="btn primary" id="promptOk">Aceptar</button>
+    </footer>
+  </dialog>
+
   <div class="toast" id="toast" role="status"></div>
+
   <script src="/static/app.js" defer></script>
+  <script src="/static/oxyfield.js" defer></script>
+  <script src="/static/runstats.js" defer></script>
 </body>
 </html>

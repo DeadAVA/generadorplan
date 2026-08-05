@@ -1,7 +1,7 @@
 'use strict';
 
-const CACHE = 'andres-trainer-v2';
-const SHELL = ['/', '/static/styles.css', '/static/app.js', '/static/icon.svg', '/manifest.webmanifest'];
+const CACHE = 'andres-trainer-v3';
+const SHELL = ['/', '/static/styles.css', '/static/app.js', '/static/oxyfield.js', '/static/runstats.js', '/static/icon.svg', '/manifest.webmanifest'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(SHELL)));

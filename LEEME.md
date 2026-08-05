@@ -68,6 +68,8 @@ curl http://localhost:5001/api/health
 
 El archivo `.env` se versiona porque este repositorio es privado, pero continúa excluido del contexto Docker.
 
+`ALLOWED_HOSTS=*` permite que la aplicación acepte el encabezado reenviado por Cloudflare Tunnel. El acceso público debe limitarse mediante Cloudflare Access; si se publica sin túnel, sustituye `*` por una lista de hosts separados por comas.
+
 ## Seguridad pública
 
 Antes de exponer el dominio, crea una aplicación de Cloudflare Access para `andrestrainer.qzz.io` y limita el acceso al correo del entrenador. Sin Access, cualquier visitante del dominio podría modificar atletas y planes porque la aplicación está pensada inicialmente para un solo entrenador.

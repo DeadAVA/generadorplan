@@ -348,6 +348,8 @@
     resetCrono(); setButtonState('idle');
     buildTable(); rebuildChart();
     updateStageInfo();
+    const saveBtn = document.getElementById('oxySaveDB');
+    if (saveBtn) saveBtn.disabled = true;
     const rep = document.getElementById('cuerpo-interpretacion');
     if (rep) rep.innerHTML = '<p class="oxyf-report-empty">El reporte se genera al registrar lecturas de esfuerzo.</p>';
     // Ocultar resultado Cooper
@@ -395,6 +397,10 @@
     appendTableRow(rec);
     updateChart(rec);
     actualizarReporte();
+    if (st.recordings.length === 1) {
+      const saveBtn = document.getElementById('oxySaveDB');
+      if (saveBtn) saveBtn.disabled = false;
+    }
     beep(880, 0.12);
     avanzarEtapa();
     updateStageInfo();
@@ -447,6 +453,67 @@
   function finalizarTest(msg) {
     st.running = false; stopCrono(); setButtonState('paused');
     typeof toast === 'function' && toast(msg);
+    const saveBtn = document.getElementById('oxySaveDB');
+    if (saveBtn) saveBtn.disabled = false;
+  }
+
+  async function guardarEnBD() {
+    if (st.recordings.length === 0) {
+      typeof toast === 'function' && toast('No hay lecturas registradas para guardar.', true); return;
+    }
+    if (st.athletes.length === 0) {
+      typeof toast === 'function' && toast('No hay atletas en el test.', true); return;
+    }
+
+    const today = new Date().toISOString().split('T')[0];
+    let saved = 0, errors = 0;
+    const lev = NAVETTE[Math.min(st.stage > 0 ? st.stage - 1 : 0, NAVETTE.length - 1)];
+
+    for (const a of st.athletes) {
+      const myRecs = st.recordings.map(r => {
+        const hr = r.hrData.find(h => h.id === a.id);
+        return { etiqueta: r.etiqueta, tiempo: r.tiempo, dist: r.dist, vel: r.vel, bpm: hr?.bpm ?? null };
+      });
+
+      const bpms = myRecs.map(r => r.bpm).filter(Boolean);
+      const fcMax = bpms.length ? Math.max(...bpms) : null;
+      const fcMin = bpms.length ? bpms[0] : null;
+
+      let vo2max = null;
+      if (st.protocol === 'navette' && lev) {
+        vo2max = parseFloat(calcVO2Navette(lev.vel, a.edad));
+      } else if (st.protocol === 'george_fisher') {
+        const pesoKg = parseFloat(document.getElementById('oxyf-gf-weight')?.value) || 70;
+        const lastBpm = bpms[bpms.length - 1];
+        if (lastBpm) vo2max = parseFloat(calcVO2GF(ms, lastBpm, pesoKg, a.edad));
+      }
+
+      const payload = {
+        athlete_name: a.nombre,
+        athlete_age: a.edad,
+        protocol: st.protocol,
+        test_date: today,
+        recordings_json: JSON.stringify(myRecs),
+        vo2max,
+        fc_max: fcMax,
+        fc_min: fcMin,
+        notes: a.nota || ''
+      };
+
+      try {
+        const resp = await fetch('/api/field-tests', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        if (resp.ok) saved++; else errors++;
+      } catch { errors++; }
+    }
+
+    if (saved > 0) typeof toast === 'function' && toast(`✅ ${saved} resultado(s) guardado(s) en la base de datos.`);
+    if (errors > 0) typeof toast === 'function' && toast(`${errors} resultado(s) no se pudo(n) guardar.`, true);
+    const saveBtn = document.getElementById('oxySaveDB');
+    if (saveBtn && saved > 0) saveBtn.disabled = true;
   }
 
   // ── VO₂máx por protocolo ───────────────────────────────────────
@@ -760,6 +827,7 @@
     document.getElementById('oxyEditProtocol')?.addEventListener('click', editarProtocolo);
     document.getElementById('oxyDelProtocol')?.addEventListener('click', eliminarProtocolo);
     document.getElementById('oxyBtnCooperCalc')?.addEventListener('click', calcularCooperFinal);
+    document.getElementById('oxySaveDB')?.addEventListener('click', guardarEnBD);
     document.getElementById('oxyPrintReport')?.addEventListener('click', () => window.print());
 
     document.getElementById('atleta-nombre')?.addEventListener('keydown', e => {

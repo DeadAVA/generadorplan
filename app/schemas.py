@@ -143,6 +143,24 @@ class PlanRead(PlanInput):
     days: list[PlanDayRead]
 
 
+class FieldTestInput(BaseModel):
+    athlete_name: str = Field(min_length=1, max_length=80)
+    athlete_age: int = Field(ge=1, le=120)
+    protocol: str = Field(min_length=1, max_length=40)
+    test_date: date
+    recordings_json: str = Field(default="[]")
+    vo2max: float | None = None
+    fc_max: int | None = None
+    fc_min: int | None = None
+    notes: str = Field(default="", max_length=2000)
+
+
+class FieldTestRead(FieldTestInput):
+    model_config = ConfigDict(from_attributes=True)
+    id: str
+    created_at: datetime
+
+
 class GeneratePlanRequest(BaseModel):
     athlete_id: str
     start_date: date

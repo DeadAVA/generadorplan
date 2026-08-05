@@ -281,10 +281,15 @@ table th{letter-spacing:.08em}
 .oxyf-chart-panel{padding-bottom:22px}
 .oxyf-chart-panel .oxyf-panel-title{margin-bottom:18px}
 
-/* Reporte — HTML usa .oxyf-report y .oxyf-print-btn */
+/* Reporte — HTML usa .oxyf-report, .oxyf-print-btn y .oxyf-save-btn */
 .oxyf-report{min-height:60px}
-.oxyf-print-btn{display:block;width:100%;margin-top:14px;border:0;border-radius:10px;padding:11px;font-weight:900;font-size:.8rem;cursor:pointer;background:#f1f5f9;color:#334155;transition:.15s;text-align:center}
+.oxyf-report-actions{display:flex;gap:8px;margin-top:14px}
+.oxyf-print-btn,.oxyf-save-btn{flex:1;border:0;border-radius:10px;padding:11px;font-weight:900;font-size:.8rem;cursor:pointer;transition:.15s;text-align:center}
+.oxyf-print-btn{background:#f1f5f9;color:#334155}
 .oxyf-print-btn:hover{background:#e2e8f0;transform:translateY(-1px)}
+.oxyf-save-btn{background:#176bda;color:#fff}
+.oxyf-save-btn:hover:not(:disabled){background:#1258b5;transform:translateY(-1px)}
+.oxyf-save-btn:disabled{background:#94a3b8;cursor:not-allowed;opacity:.7}
 
 /* Reporte */
 .oxyf-report-wrap{background:#fff;border:1px solid #dbe4ee;border-radius:18px;padding:18px;box-shadow:0 8px 28px rgba(15,38,66,.07)}

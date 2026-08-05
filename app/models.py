@@ -108,3 +108,19 @@ class Exercise(SQLModel, table=True):
     notes: str = Field(default="", sa_column=Column(Text, nullable=False, default=""))
 
     day: PlanDay | None = Relationship(back_populates="exercises")
+
+
+class FieldTest(SQLModel, table=True):
+    __tablename__ = "field_tests"
+
+    id: str = Field(default_factory=lambda: str(uuid4()), primary_key=True)
+    athlete_name: str = Field(index=True, max_length=80)
+    athlete_age: int = Field(ge=1, le=120)
+    protocol: str = Field(max_length=40, index=True)
+    test_date: date
+    recordings_json: str = Field(default="[]", sa_column=Column(Text, nullable=False, default="[]"))
+    vo2max: float | None = None
+    fc_max: int | None = None
+    fc_min: int | None = None
+    notes: str = Field(default="", sa_column=Column(Text, nullable=False, default=""))
+    created_at: datetime = Field(default_factory=utcnow)

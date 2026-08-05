@@ -11,8 +11,8 @@ from sqlmodel import Session, select
 
 from .config import ALLOWED_HOSTS, APP_NAME, APP_VERSION, BASE_DIR, DATABASE_PATH
 from .database import create_db_and_tables, engine
-from .models import Athlete, Exercise, PaceZone, PlanDay, TrainingPlan
-from .routers import athletes, backups, plans
+from .models import Athlete, Exercise, FieldTest, PaceZone, PlanDay, TrainingPlan
+from .routers import athletes, backups, field_tests, plans
 from .seed import seed_legacy_data
 
 
@@ -45,6 +45,7 @@ app.add_middleware(NoCacheStaticMiddleware)
 app.add_middleware(TrustedHostMiddleware, allowed_hosts=ALLOWED_HOSTS)
 app.include_router(athletes.router)
 app.include_router(plans.router)
+app.include_router(field_tests.router)
 app.include_router(backups.router)
 
 
@@ -56,6 +57,7 @@ def health():
             "plans": len(session.exec(select(TrainingPlan)).all()),
             "days": len(session.exec(select(PlanDay)).all()),
             "exercises": len(session.exec(select(Exercise)).all()),
+            "field_tests": len(session.exec(select(FieldTest)).all()),
         }
     return {"status": "ok", "version": APP_VERSION, "database": DATABASE_PATH.name, **counts}
 
